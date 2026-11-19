@@ -1,0 +1,43 @@
+{
+  "name": "reviewforge-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ReviewForge - Decoupled Enterprise Express.js + TypeScript + Mongoose Backend",
+  "type": "module",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "node node_modules/typescript/lib/tsc.js",
+    "start": "node dist/server.js",
+    "dev": "node --watch --no-warnings dist/server.js",
+    "db:clear": "node scripts/clear-reviews.mjs",
+    "test": "node --no-warnings tests/run-tests.mjs && node --no-warnings tests/auth.test.mjs && node --no-warnings tests/employee.test.mjs && node --no-warnings tests/department.test.mjs && node --no-warnings tests/review-cycle.test.mjs && node --no-warnings tests/feedback.test.mjs && node --no-warnings tests/okr.test.mjs && node --no-warnings tests/manager-note.test.mjs && node --no-warnings tests/ai-synthesizer.test.mjs && node --no-warnings tests/review-workflow.test.mjs && node --no-warnings tests/analytics.test.mjs && node --no-warnings tests/notification-audit.test.mjs && node --no-warnings tests/security-optimization.test.mjs && node --no-warnings tests/e2e-system-integration.test.mjs",
+    "test:auth": "node --no-warnings tests/auth.test.mjs",
+    "test:employee": "node --no-warnings tests/employee.test.mjs",
+    "test:department": "node --no-warnings tests/department.test.mjs",
+    "test:review-cycle": "node --no-warnings tests/review-cycle.test.mjs",
+    "test:feedback": "node --no-warnings tests/feedback.test.mjs",
+    "test:okr": "node --no-warnings tests/okr.test.mjs",
+    "test:manager-note": "node --no-warnings tests/manager-note.test.mjs",
+    "test:ai": "node --no-warnings tests/ai-synthesizer.test.mjs",
+    "test:workflow": "node --no-warnings tests/review-workflow.test.mjs",
+    "test:analytics": "node --no-warnings tests/analytics.test.mjs",
+    "test:notifications": "node --no-warnings tests/notification-audit.test.mjs",
+    "test:security": "node --no-warnings tests/security-optimization.test.mjs",
+    "test:e2e": "node --no-warnings tests/e2e-system-integration.test.mjs"
+  },
+  "dependencies": {
+    "@google/genai": "^0.1.2",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "jose": "^5.9.6",
+    "mongoose": "^9.1.4",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20.17.14",
+    "typescript": "^5.7.3"
+  }
+}
