@@ -19,6 +19,9 @@
     "client",
     "server"
   ],
+  "dependencies": {
+    "typescript": "^5.7.3"
+  },
   "keywords": [
     "performance-review",
     "360-feedback",
