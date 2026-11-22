@@ -42,15 +42,22 @@ export async function connectDatabase(customUri?: string): Promise<typeof mongoo
   lastConnectionError = null;
 
   try {
+    const isAtlas = /^mongodb\+srv:\/\//i.test(uri);
+
     const conn = await mongoose.connect(uri, {
       dbName: config.MONGODB_DB_NAME,
-      serverSelectionTimeoutMS: 8000,
-      connectTimeoutMS: 8000,
-      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 15000,
+      connectTimeoutMS: 15000,
+      socketTimeoutMS: 45000,
+      maxPoolSize: isAtlas ? 20 : 10,
       minPoolSize: 1,
+      autoIndex: config.NODE_ENV !== 'production',
+      retryWrites: true,
+      w: 'majority',
     });
 
-    console.log(`✅ Mongoose connected successfully to database: ${conn.connection.name}`);
+    const clusterType = isAtlas ? 'MongoDB Atlas Cluster' : 'Local MongoDB';
+    console.log(`✅ Mongoose connected successfully to ${clusterType} [db: ${conn.connection.name}]`);
     isConnecting = false;
     return conn;
   } catch (error) {
@@ -60,6 +67,18 @@ export async function connectDatabase(customUri?: string): Promise<typeof mongoo
     const sanitizedError = rawMsg.replace(/mongodb(\+srv)?:\/\/[^@\s]+@/gi, 'mongodb$1://***:***@');
     lastConnectionError = sanitizedError;
     console.error('❌ Mongoose connection failed:', sanitizedError);
+
+    // Provide actionable diagnostic suggestions for Atlas deployment
+    if (/serverselection|querysrv|etimedout|enotfound/i.test(rawMsg)) {
+      console.error(
+        '👉 Atlas Deployment Hint: Verify that your server IP is whitelisted under Atlas > Network Access (use 0.0.0.0/0 for cloud hosts like Render, Railway, AWS, or Vercel).'
+      );
+    } else if (/bad auth|authentication failed/i.test(rawMsg)) {
+      console.error(
+        '👉 Atlas Deployment Hint: Authentication failed. Double-check your Atlas Database User username and password in Atlas > Database Access.'
+      );
+    }
+
     throw new Error(`Database connection failed: ${sanitizedError}`);
   }
 }
@@ -131,5 +150,9 @@ mongoose.connection.on('disconnected', () => {
 
 mongoose.connection.on('reconnected', () => {
   console.log('🔄 Mongoose connection re-established.');
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('❌ Mongoose connection runtime error:', err.message);
 });
 

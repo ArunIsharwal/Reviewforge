@@ -40,6 +40,7 @@ function AIReviewStudioContent() {
     managerNotes,
     performanceReviews,
     savePerformanceReview,
+    submitReviewForApproval,
     synthesizeReview,
     showToast,
     dbConnected
@@ -66,6 +67,7 @@ function AIReviewStudioContent() {
 
   const [currentReview, setCurrentReview] = useState<PerformanceReview | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [regeneratingSection, setRegeneratingSection] = useState<string | null>(null);
   const [selectedEvidence, setSelectedEvidence] = useState<EvidenceReference | null>(null);
   const [activeRightTab, setActiveRightTab] = useState<'inspector' | 'quality'>('inspector');
@@ -216,14 +218,19 @@ function AIReviewStudioContent() {
   };
 
   // Approve & Send to Approval Queue
-  const handleSendToApproval = () => {
-    if (!currentReview) return;
-    savePerformanceReview({
-      ...currentReview,
-      status: 'Pending Approval'
-    });
-    showToast('Submitted review draft to Executive Approval Queue', 'success');
-    router.push('/approvals');
+  const handleSendToApproval = async () => {
+    if (!currentReview || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      await savePerformanceReview(currentReview);
+      const submitted = await submitReviewForApproval(currentReview.id);
+      if (submitted) {
+        router.push('/approvals');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const sectionKeys: (keyof PerformanceReview['sections'])[] = [
@@ -292,14 +299,17 @@ function AIReviewStudioContent() {
                 Save Draft
               </Button>
 
-              <Button
-                variant="primary"
-                size="sm"
-                leftIcon={<Send className="w-3.5 h-3.5 text-[#C8ED78]" />}
-                onClick={handleSendToApproval}
-              >
-                Submit for Approval
-              </Button>
+              {(currentReview.status === 'Draft' || currentReview.status === 'Changes Requested') && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  isLoading={isSubmitting}
+                  leftIcon={<Send className="w-3.5 h-3.5 text-[#C8ED78]" />}
+                  onClick={handleSendToApproval}
+                >
+                  Submit for Approval
+                </Button>
+              )}
             </>
           ) : (
             <Button

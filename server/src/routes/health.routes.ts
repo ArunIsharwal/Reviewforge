@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import { checkDatabaseHealth } from '../config/database.js';
 import { config } from '../config/env.js';
+import { isGeminiConfigured } from '../config/gemini.js';
 
 const router = express.Router();
 
@@ -22,7 +23,11 @@ router.get('/', async (_req: Request, res: Response) => {
       api: { status: 'operational' },
       database: { status: dbHealth.status, connected: dbHealth.connected },
       ai: {
-        status: config.GEMINI_ENABLED && config.GEMINI_API_KEY ? 'configured' : 'awaiting_key',
+        status: !config.GEMINI_ENABLED
+          ? 'disabled'
+          : isGeminiConfigured(config.GEMINI_ENABLED, config.GEMINI_API_KEY)
+            ? 'configured'
+            : 'awaiting_key',
         model: config.GEMINI_MODEL,
       },
     },

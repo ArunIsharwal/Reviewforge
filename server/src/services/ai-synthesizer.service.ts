@@ -1,5 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { config } from '../config/env.js';
+import { isGeminiConfigured } from '../config/gemini.js';
+import { resolveEvidenceReferences } from './evidence-references.js';
 import { Employee, IEmployee } from '../models/Employee.js';
 import { ReviewCycle, IReviewCycle } from '../models/ReviewCycle.js';
 import { SelfReflection, ISelfReflection } from '../models/SelfReflection.js';
@@ -143,14 +145,13 @@ export class AISynthesizerService {
 
     // 3. Check AI Provider Readiness
     const apiKey = config.GEMINI_API_KEY;
-    const isApiKeyConfigured = Boolean(
-      apiKey &&
-      apiKey.trim().length > 20 &&
-      apiKey.startsWith('AIzaSy') &&
-      !apiKey.startsWith('mock_')
-    );
+    const isApiKeyConfigured = isGeminiConfigured(config.GEMINI_ENABLED, apiKey);
 
     if (!isApiKeyConfigured && !forceMock) {
+      const errorMessage = config.GEMINI_ENABLED
+        ? 'GEMINI_API_KEY is not configured on the backend server'
+        : 'Gemini synthesis is disabled by GEMINI_ENABLED';
+
       // Record failure log
       await AISynthesisLog.create({
         id: `log-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -165,12 +166,10 @@ export class AISynthesizerService {
         coverageScore: quality.overallCoverageScore,
         conflictsDetected: quality.conflictingFeedbackDetected,
         missingEvidenceFlags: quality.missingEvidenceFlags,
-        errorMessage: 'GEMINI_API_KEY is not configured on the backend server',
+        errorMessage,
       });
 
-      const err: any = new Error(
-        'AI Synthesis Engine is not operational. A valid GEMINI_API_KEY must be configured in server/.env to synthesize reviews.'
-      );
+      const err: any = new Error(errorMessage);
       err.statusCode = 503;
       err.code = 'AI_PROVIDER_UNAVAILABLE';
       throw err;
@@ -500,15 +499,13 @@ export class AISynthesizerService {
         evidenceCatalog[idx % evidenceCatalog.length],
         evidenceCatalog[(idx + 1) % evidenceCatalog.length],
       ].filter(Boolean);
+      const resolvedEvidence = resolveEvidenceReferences(existing?.evidenceRefs, evidenceCatalog);
 
       result[key] = {
         id: existing?.id || `sec-${key}-${Date.now()}`,
         title: existing?.title || defaultTitle,
         content: existing?.content || `Performance observations recorded for ${defaultTitle}.`,
-        evidenceRefs:
-          existing?.evidenceRefs && existing.evidenceRefs.length > 0
-            ? existing.evidenceRefs
-            : fallbackEvidence,
+        evidenceRefs: resolvedEvidence.length > 0 ? resolvedEvidence : fallbackEvidence,
         isFlaggedForReview: existing?.isFlaggedForReview || false,
         flagReason: existing?.flagReason || '',
       };
@@ -586,7 +583,7 @@ ${okrs
 ### Instructions:
 1. Synthesize professional, executive prose grounded STRICTLY in the provided evidence.
 2. DO NOT fabricate any accomplishments, projects, or statistics not in the prompt.
-3. Every section MUST include 1 to 3 "evidenceRefs" taken directly from the "Available Empirical Evidence Records".
+3. Every section MUST include 1 to 3 "evidenceRefs" as full evidence-record objects copied from the "Available Empirical Evidence Records", not as string IDs.
 4. Provide an overall rating between 1.0 and 5.0.
 ${regenerateSection ? `FOCUS: Specifically regenerate the "${regenerateSection}" section.` : ''}
 

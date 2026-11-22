@@ -43,6 +43,7 @@ export default function ApprovalsPage() {
   const pendingReviews = performanceReviews.filter(
     r => r.status === 'Pending Approval' || r.status === 'Changes Requested'
   );
+  const draftReviewCount = performanceReviews.filter(r => r.status === 'Draft').length;
 
   const approvedReviews = performanceReviews.filter(
     r => r.status === 'Approved' || r.status === 'Released'
@@ -216,8 +217,12 @@ export default function ApprovalsPage() {
         ) : (
           <EmptyState
             icon={<CheckCircle2 className="w-8 h-8 text-[#2C5E1A]" />}
-            title="Approval Queue Clean"
-            description="All synthesized performance reviews have been signed off by evaluating managers."
+            title="No reviews awaiting sign-off"
+            description={
+              draftReviewCount > 0
+                ? `${draftReviewCount} draft review${draftReviewCount === 1 ? '' : 's'} still need to be submitted from Performance Reviews.`
+                : 'Reviews appear here after a manager submits a draft for approval.'
+            }
           />
         )}
       </div>

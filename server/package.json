@@ -11,6 +11,8 @@
     "dev": "node --watch --no-warnings dist/server.js",
     "db:clear": "node scripts/clear-reviews.mjs",
     "test": "node --no-warnings tests/run-tests.mjs && node --no-warnings tests/auth.test.mjs && node --no-warnings tests/employee.test.mjs && node --no-warnings tests/department.test.mjs && node --no-warnings tests/review-cycle.test.mjs && node --no-warnings tests/feedback.test.mjs && node --no-warnings tests/okr.test.mjs && node --no-warnings tests/manager-note.test.mjs && node --no-warnings tests/ai-synthesizer.test.mjs && node --no-warnings tests/review-workflow.test.mjs && node --no-warnings tests/analytics.test.mjs && node --no-warnings tests/notification-audit.test.mjs && node --no-warnings tests/security-optimization.test.mjs && node --no-warnings tests/e2e-system-integration.test.mjs",
+    "test:ai-config": "node --no-warnings tests/gemini-config.test.mjs",
+    "test:ai-evidence-refs": "node --no-warnings tests/evidence-references.test.mjs",
     "test:auth": "node --no-warnings tests/auth.test.mjs",
     "test:employee": "node --no-warnings tests/employee.test.mjs",
     "test:department": "node --no-warnings tests/department.test.mjs",
@@ -26,7 +28,7 @@
     "test:e2e": "node --no-warnings tests/e2e-system-integration.test.mjs"
   },
   "dependencies": {
-    "@google/genai": "^0.1.2",
+    "@google/genai": "^3.0.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",

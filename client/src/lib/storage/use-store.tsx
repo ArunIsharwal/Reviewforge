@@ -141,8 +141,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         setDbConnected(false);
       }
 
+      if (!health.healthy || !health.database?.connected) {
+        const storedUser = apiClient.getStoredUser();
+        if (storedUser) {
+          setAuthUser(storedUser);
+          if (syncRoleFromSession && storedUser.role) {
+            DataRepository.setActiveRole(storedUser.role);
+            setActiveRoleState(storedUser.role);
+          }
+        } else {
+          setAuthUser(null);
+        }
+        console.warn(
+          'ReviewForge backend/database is unavailable; server data sync was skipped.',
+          health.error || 'Health check did not confirm a database connection.'
+        );
+        return;
+      }
+
       // 2. Authenticate session from backend
-      const user = await apiClient.getCurrentUser();
+      const user = apiClient.getAccessToken() ? await apiClient.getCurrentUser() : null;
       if (user) {
         const sessionUser: SessionUser = {
           id: user.id,
@@ -166,6 +184,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             DataRepository.setActiveRole(storedUser.role);
             setActiveRoleState(storedUser.role);
           }
+        } else {
+          setAuthUser(null);
         }
       }
 

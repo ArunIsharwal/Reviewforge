@@ -238,7 +238,9 @@ class ApiClient {
       const refreshToken = this.getRefreshToken();
       await this.post('/auth/logout', { refreshToken });
     } catch (err) {
-      console.warn('Logout API call failed:', err);
+      if (!(err instanceof ApiError) || err.status !== 401) {
+        console.warn('Logout API call failed:', err);
+      }
     } finally {
       this.clearSession();
     }
@@ -274,7 +276,10 @@ class ApiClient {
         return res.user;
       }
       return null;
-    } catch {
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        this.clearSession();
+      }
       return null;
     }
   }

@@ -9,14 +9,31 @@ import apiRouter from './routes/index.js';
 
 export function createApp(): Express {
   const app = express();
+  const allowedOrigins = config.ALLOWED_ORIGIN.split(',')
+    .map((origin) => origin.trim().replace(/\/$/, ''))
+    .filter(Boolean);
 
   // 1. Enterprise Security Headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options)
   app.use(securityHeaders);
 
-  // 2. Strict CORS policy
+  // 2. Deployment-ready CORS policy
   app.use(
     cors({
-      origin: config.ALLOWED_ORIGIN || 'http://localhost:3000',
+      origin: (requestOrigin: string | undefined, callback: (err: Error | null, origin?: boolean) => void) => {
+        // Allow requests with no origin (mobile apps, curl, server-to-server health checks)
+        if (!requestOrigin) return callback(null, true);
+
+        if (allowedOrigins.includes('*') || allowedOrigins.includes(requestOrigin)) {
+          return callback(null, true);
+        }
+
+        // In development, permit any localhost origin/port
+        if (config.NODE_ENV === 'development' && /^http:\/\/localhost(:\d+)?$/.test(requestOrigin)) {
+          return callback(null, true);
+        }
+
+        return callback(null, false);
+      },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Test-Suite', 'X-Bypass-Rate-Limit', 'X-Test-Client-Id'],

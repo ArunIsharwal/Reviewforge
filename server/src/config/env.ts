@@ -1,17 +1,36 @@
 import dotenv from 'dotenv';
 import path from 'path';
+import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 
-// Load .env
-dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+const serverDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+dotenv.config({ path: path.join(serverDirectory, '.env') });
+
+const booleanFromEnv = (defaultValue: boolean) =>
+  z.preprocess(
+    (value) => {
+      if (typeof value !== 'string') return value;
+      if (value.toLowerCase() === 'true') return true;
+      if (value.toLowerCase() === 'false') return false;
+      return value;
+    },
+    z.boolean().default(defaultValue)
+  );
 
 const envSchema = z.object({
-  PORT: z.coerce.number().default(5000),
+  PORT: z.coerce.number().int().min(1).max(65535).default(5000),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   ALLOWED_ORIGIN: z.string().default('http://localhost:3000'),
 
   // MongoDB
-  MONGODB_URI: z.string().min(1, 'MONGODB_URI is required'),
+  MONGODB_URI: z
+    .string()
+    .trim()
+    .min(1, 'MONGODB_URI is required')
+    .refine(
+      (uri) => /^mongodb(?:\+srv)?:\/\//i.test(uri),
+      'MONGODB_URI must start with mongodb:// or mongodb+srv://'
+    ),
   MONGODB_DB_NAME: z.string().default('reviewforge'),
 
   // JWT Auth
@@ -23,8 +42,8 @@ const envSchema = z.object({
   // Google Gemini AI
   GEMINI_API_KEY: z.string().optional().default(''),
   GEMINI_MODEL: z.string().default('gemini-3.5-flash'),
-  GEMINI_ENABLED: z.coerce.boolean().default(true),
-  GEMINI_ALLOW_REAL_EMPLOYEE_DATA: z.coerce.boolean().default(false),
+  GEMINI_ENABLED: booleanFromEnv(true),
+  GEMINI_ALLOW_REAL_EMPLOYEE_DATA: booleanFromEnv(false),
 
   // Seed Admin
   SEED_ADMIN_NAME: z.string().default('ReviewForge Admin'),

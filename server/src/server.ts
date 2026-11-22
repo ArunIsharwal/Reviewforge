@@ -63,11 +63,14 @@ async function startServer() {
         });
       })
       .catch((err) => {
+        if (config.NODE_ENV === 'production') {
+          throw err;
+        }
         console.warn('⚠️ Server started with degraded database connection:', err.message);
       });
 
-    const server = app.listen(config.PORT, () => {
-      console.log(`🌟 ReviewForge Server running on: http://localhost:${config.PORT}`);
+    const server = app.listen(config.PORT, '0.0.0.0', () => {
+      console.log(`🌟 ReviewForge Server listening on port ${config.PORT}`);
       console.log(`🩺 Health endpoint: http://localhost:${config.PORT}/api/v1/health`);
       console.log(`🌍 Environment: ${config.NODE_ENV}`);
     });
