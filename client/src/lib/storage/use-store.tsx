@@ -88,6 +88,7 @@ interface StoreContextValue {
   getDashboardMetrics: () => Promise<any>;
   getAnalyticsSummary: (params?: { reviewCycleId?: string; departmentId?: string }) => Promise<any>;
   exportAnalytics: (params?: { format?: 'csv' | 'json'; reviewCycleId?: string }) => Promise<any>;
+  refreshEmployeeEvidence: (employeeId: string) => Promise<void>;
 }
 
 const StoreContext = createContext<StoreContextValue | undefined>(undefined);
@@ -255,7 +256,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         try {
           const okrsRes = await apiClient.getOKRs<OKR[]>();
           if (okrsRes.success && Array.isArray(okrsRes.data)) {
-            setOkrs(okrsRes.data);
+            if (okrsRes.data.length > 0) {
+              setOkrs(okrsRes.data);
+              okrsRes.data.forEach(o => {
+                DataRepository.updateOKR(o.id, o) || DataRepository.addOKR(o);
+              });
+            } else {
+              const localOkrs = DataRepository.getOKRs();
+              if (localOkrs.length > 0) {
+                setOkrs(localOkrs);
+              }
+            }
           }
         } catch (e) {
           console.warn('Could not sync OKRs from server:', e);
@@ -283,7 +294,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         try {
           const refRes = await apiClient.getSelfReflections<SelfReflection[]>();
           if (refRes.success && Array.isArray(refRes.data)) {
-            setSelfReflections(refRes.data);
+            if (refRes.data.length > 0) {
+              setSelfReflections(refRes.data);
+              refRes.data.forEach(r => DataRepository.saveSelfReflection(r));
+            } else {
+              const localRefs = DataRepository.getSelfReflections();
+              if (localRefs.length > 0) {
+                setSelfReflections(localRefs);
+              }
+            }
           }
         } catch (e) {
           console.warn('Could not sync self reflections from server:', e);
@@ -639,6 +658,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const res = await apiClient.createOKR<OKR>(okr);
           if (res.success && res.data) {
             setOkrs((prev) => [res.data!, ...prev]);
+            DataRepository.addOKR(res.data);
             showToast('New OKR objective registered successfully', 'success');
             return res.data;
           } else {
@@ -830,6 +850,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             const filtered = prev.filter(r => r.id !== res.data!.id);
             return [res.data!, ...filtered];
           });
+          DataRepository.saveSelfReflection(res.data);
           showToast('Self-reflection saved successfully', 'success');
           return res.data;
         } else {
@@ -1341,6 +1362,47 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const refreshEmployeeEvidence = useCallback(async (employeeId: string) => {
+    try {
+      const [okrRes, refRes] = await Promise.allSettled([
+        apiClient.getOKRs<OKR[]>({ employeeId }),
+        apiClient.getSelfReflections<SelfReflection[]>({ employeeId }),
+      ]);
+
+      if (
+        okrRes.status === 'fulfilled' &&
+        okrRes.value.success &&
+        Array.isArray(okrRes.value.data) &&
+        okrRes.value.data.length > 0
+      ) {
+        const fetchedOkrs = okrRes.value.data;
+        setOkrs((prev) => {
+          const map = new Map(prev.map((o) => [o.id, o]));
+          fetchedOkrs.forEach((o) => map.set(o.id, o));
+          return Array.from(map.values());
+        });
+        fetchedOkrs.forEach((o) => DataRepository.updateOKR(o.id, o) || DataRepository.addOKR(o));
+      }
+
+      if (
+        refRes.status === 'fulfilled' &&
+        refRes.value.success &&
+        Array.isArray(refRes.value.data) &&
+        refRes.value.data.length > 0
+      ) {
+        const fetchedRefs = refRes.value.data;
+        setSelfReflections((prev) => {
+          const map = new Map(prev.map((r) => [r.id, r]));
+          fetchedRefs.forEach((r) => map.set(r.id, r));
+          return Array.from(map.values());
+        });
+        fetchedRefs.forEach((r) => DataRepository.saveSelfReflection(r));
+      }
+    } catch (err) {
+      console.warn('Error refreshing employee evidence:', err);
+    }
+  }, []);
+
   const value: StoreContextValue = {
     isHydrated,
     dbConnected,
@@ -1401,7 +1463,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     updateSettings,
     getDashboardMetrics,
     getAnalyticsSummary,
-    exportAnalytics
+    exportAnalytics,
+    refreshEmployeeEvidence
   };
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

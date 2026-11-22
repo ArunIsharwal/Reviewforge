@@ -42,15 +42,12 @@ async function startServer() {
           console.warn('ReviewCycle seed warning:', e.message);
         });
         // Seed initial review artifacts if empty or explicitly enabled
-        const okrCount = await OKR.countDocuments({ organizationId: 'org-reviewforge-default' });
-        if (okrCount === 0 || process.env.SEED_DEMO_REVIEWS === 'true') {
-          await seedInitialFeedback().catch((e) => console.warn('Feedback seed warning:', e.message));
-          await seedInitialFeedbackRequests().catch((e) => console.warn('FeedbackRequest seed warning:', e.message));
-          await seedInitialOKRs().catch((e) => console.warn('OKR seed warning:', e.message));
-          await seedInitialManagerNotes().catch((e) => console.warn('ManagerNote seed warning:', e.message));
-          await seedInitialSelfReflections().catch((e) => console.warn('SelfReflection seed warning:', e.message));
-          await seedInitialPerformanceReviews().catch((e) => console.warn('PerformanceReview seed warning:', e.message));
-        }
+        await seedInitialFeedback().catch((e) => console.warn('Feedback seed warning:', e.message));
+        await seedInitialFeedbackRequests().catch((e) => console.warn('FeedbackRequest seed warning:', e.message));
+        await seedInitialOKRs().catch((e) => console.warn('OKR seed warning:', e.message));
+        await seedInitialManagerNotes().catch((e) => console.warn('ManagerNote seed warning:', e.message));
+        await seedInitialSelfReflections().catch((e) => console.warn('SelfReflection seed warning:', e.message));
+        await seedInitialPerformanceReviews().catch((e) => console.warn('PerformanceReview seed warning:', e.message));
         await seedInitialNotifications().catch((e) => {
           console.warn('Notification seed warning:', e.message);
         });

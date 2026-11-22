@@ -18,7 +18,13 @@ async function main() {
     console.log(`${e.id} | name: ${e.name} | managerId: ${e.managerId} | dept: ${e.departmentId}`);
   }
 
-  process.exit(0);
+    const emps = await db.collection('employees').find({}).toArray();
+    console.log('Employees in Atlas:', emps.length);
+    for (const e of emps) {
+        console.log(`- ${e.id} | ${e.name} | ${e.email} | ${e.departmentId}`);
+    }
+
+    process.exit(0);
 }
 
 main().catch(err => {

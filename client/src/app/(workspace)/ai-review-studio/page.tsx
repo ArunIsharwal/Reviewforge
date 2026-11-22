@@ -45,7 +45,8 @@ function AIReviewStudioContent() {
     synthesizeReview,
     showToast,
     dbConnected,
-    activeRole
+    activeRole,
+    refreshEmployeeEvidence
   } = useStore();
 
   const isAuthorized = activeRole === 'manager' || activeRole === 'hr_admin';
@@ -79,6 +80,13 @@ function AIReviewStudioContent() {
 
   // Quality evaluation
   const [qualityCheck, setQualityCheck] = useState<SynthesisQualityCheck | null>(null);
+
+  // Sync specific employee evidence from server if missing in local state
+  useEffect(() => {
+    if (employee?.id && (empOkrs.length === 0 || !empReflection)) {
+      void refreshEmployeeEvidence(employee.id);
+    }
+  }, [selectedEmpId, employee?.id, empOkrs.length, empReflection, refreshEmployeeEvidence]);
 
   // Load review on mount or employee change
   useEffect(() => {
