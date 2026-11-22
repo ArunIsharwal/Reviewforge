@@ -99,6 +99,7 @@ class ApiClient {
       localStorage.removeItem('reviewforge_token');
       localStorage.removeItem('reviewforge_refresh_token');
       localStorage.removeItem('reviewforge_user');
+      localStorage.removeItem('reviewforge_active_role');
     } catch (e) {
       console.warn('Failed clearing session:', e);
     }

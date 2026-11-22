@@ -177,20 +177,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           employeeId: user.employeeId,
         };
         setAuthUser(sessionUser);
-
-        // For non-admin users, activeRole must strictly match authenticated role
-        if (user.role !== 'hr_admin' || syncRoleFromSession) {
-          DataRepository.setActiveRole(user.role);
-          setActiveRoleState(user.role);
-        }
+        DataRepository.setActiveRole(user.role);
+        setActiveRoleState(user.role);
       } else {
         const storedUser = apiClient.getStoredUser();
         if (storedUser) {
           setAuthUser(storedUser);
-          if (storedUser.role !== 'hr_admin' || syncRoleFromSession) {
-            DataRepository.setActiveRole(storedUser.role);
-            setActiveRoleState(storedUser.role);
-          }
+          DataRepository.setActiveRole(storedUser.role);
+          setActiveRoleState(storedUser.role);
         } else {
           setAuthUser(null);
         }
@@ -1342,7 +1336,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setAuthUser(null);
     DataRepository.setActiveRole('hr_admin');
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('reviewforge_active_role');
+      apiClient.clearSession();
       window.location.href = '/login';
     }
   }, []);

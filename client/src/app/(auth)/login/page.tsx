@@ -38,9 +38,8 @@ export default function LoginPage() {
 
       setSuccess(`Signed in successfully as ${res.user.name} (${res.user.role}). Redirecting...`);
       setTimeout(() => {
-        router.push('/dashboard');
-        router.refresh();
-      }, 700);
+        window.location.href = '/dashboard';
+      }, 350);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'An error occurred during authentication.');
     } finally {
@@ -49,6 +48,7 @@ export default function LoginPage() {
   };
 
   const setDemoCreds = (demoEmail: string, demoPass: string) => {
+    apiClient.clearSession();
     setEmail(demoEmail);
     setPassword(demoPass);
     setError(null);
