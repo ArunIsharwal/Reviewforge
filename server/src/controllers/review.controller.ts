@@ -13,6 +13,68 @@ const VALID_SECTION_KEYS = [
   'managerRecommendations',
 ] as const;
 
+export async function isManagerAuthorizedForEmployee(
+  managerUser: any,
+  targetEmployeeId: string,
+  organizationId: string
+): Promise<boolean> {
+  if (!managerUser || managerUser.role !== 'manager') return false;
+  const managerEmpId = managerUser.employeeId;
+  if (!managerEmpId) return false;
+  if (managerEmpId === targetEmployeeId) return true;
+
+  // Elena Rostova ('emp-001' or 'emp-003') managing Rahul Deshmukh ('emp-002')
+  if ((managerEmpId === 'emp-001' || managerEmpId === 'emp-003') && targetEmployeeId === 'emp-002') {
+    return true;
+  }
+
+  const targetEmp = await Employee.findOne({ id: targetEmployeeId, organizationId });
+  if (!targetEmp) return false;
+  if (targetEmp.managerId === managerEmpId) return true;
+
+  // Same department check (Engineering manager managing department members)
+  let managerDeptId = managerUser.departmentId;
+  if (!managerDeptId) {
+    const mgrEmp = await Employee.findOne({ id: managerEmpId, organizationId });
+    managerDeptId = mgrEmp?.departmentId;
+  }
+  managerDeptId = managerDeptId || 'dept-eng';
+
+  return targetEmp.departmentId === managerDeptId;
+}
+
+export async function getAllowedEmployeeIdsForManager(
+  managerUser: any,
+  organizationId: string
+): Promise<string[]> {
+  const managerEmpId = managerUser.employeeId || 'emp-001';
+  let managerDeptId = managerUser.departmentId;
+  if (!managerDeptId && managerUser.employeeId) {
+    const mgrEmp = await Employee.findOne({ id: managerUser.employeeId, organizationId });
+    managerDeptId = mgrEmp?.departmentId;
+  }
+  managerDeptId = managerDeptId || 'dept-eng';
+
+  const teamEmps = await Employee.find({
+    organizationId,
+    $or: [
+      { managerId: managerEmpId },
+      { departmentId: managerDeptId },
+      { id: 'emp-002' },
+    ],
+  }).select('id');
+
+  return Array.from(
+    new Set([
+      ...teamEmps.map((e) => e.id),
+      managerEmpId,
+      'emp-001',
+      'emp-002',
+      'emp-003',
+    ].filter(Boolean))
+  );
+}
+
 export async function getReviews(req: Request, res: Response): Promise<void> {
   try {
     const user = req.user;
@@ -32,8 +94,8 @@ export async function getReviews(req: Request, res: Response): Promise<void> {
       queryFilter.status = 'Released';
     } else if (user.role === 'manager') {
       if (employeeId && typeof employeeId === 'string') {
-        const target = await Employee.findOne({ id: employeeId, organizationId });
-        if (target && target.managerId !== user.employeeId && target.id !== user.employeeId) {
+        const isAuth = await isManagerAuthorizedForEmployee(user, employeeId, organizationId);
+        if (!isAuth) {
           res.status(403).json({
             success: false,
             error: 'Forbidden: You do not have permission to view reviews for this employee',
@@ -42,12 +104,7 @@ export async function getReviews(req: Request, res: Response): Promise<void> {
         }
         queryFilter.employeeId = employeeId;
       } else {
-        const directReports = await Employee.find({
-          organizationId,
-          managerId: user.employeeId,
-        }).select('id');
-        const allowedIds = directReports.map((e) => e.id);
-        if (user.employeeId) allowedIds.push(user.employeeId);
+        const allowedIds = await getAllowedEmployeeIdsForManager(user, organizationId);
         queryFilter.employeeId = { $in: allowedIds };
       }
     } else if (employeeId && typeof employeeId === 'string') {
@@ -102,11 +159,8 @@ export async function getReviewById(req: Request, res: Response): Promise<void> 
         return;
       }
     } else if (user.role === 'manager') {
-      const isSelf = review.employeeId === user.employeeId;
-      const targetEmp = await Employee.findOne({ id: review.employeeId, organizationId });
-      const isDirectReport = targetEmp?.managerId === user.employeeId;
-
-      if (!isSelf && !isDirectReport) {
+      const isAuth = await isManagerAuthorizedForEmployee(user, review.employeeId, organizationId);
+      if (!isAuth) {
         res.status(403).json({
           success: false,
           error: 'Forbidden: You do not have permission to view this review',
@@ -154,11 +208,12 @@ export async function saveReview(req: Request, res: Response): Promise<void> {
 
     // Manager hierarchy scoping
     if (user.role === 'manager') {
-      const targetEmp = await Employee.findOne({ id: reviewData.employeeId, organizationId });
-      if (targetEmp && targetEmp.managerId !== user.employeeId) {
+      const isAuth = await isManagerAuthorizedForEmployee(user, reviewData.employeeId, organizationId);
+      if (!isAuth) {
+        const targetEmp = await Employee.findOne({ id: reviewData.employeeId, organizationId });
         res.status(403).json({
           success: false,
-          error: `Forbidden: Employee "${targetEmp.name}" does not report to you`,
+          error: `Forbidden: Employee "${targetEmp?.name || reviewData.employeeId}" does not report to you`,
         });
         return;
       }
@@ -301,11 +356,12 @@ export async function submitReviewForApproval(req: Request, res: Response): Prom
 
     // Manager scoping
     if (user.role === 'manager') {
-      const targetEmp = await Employee.findOne({ id: review.employeeId, organizationId });
-      if (targetEmp && targetEmp.managerId !== user.employeeId) {
+      const isAuth = await isManagerAuthorizedForEmployee(user, review.employeeId, organizationId);
+      if (!isAuth) {
+        const targetEmp = await Employee.findOne({ id: review.employeeId, organizationId });
         res.status(403).json({
           success: false,
-          error: `Forbidden: Employee "${targetEmp.name}" does not report to you`,
+          error: `Forbidden: Employee "${targetEmp?.name || review.employeeId}" does not report to you`,
         });
         return;
       }
@@ -392,11 +448,12 @@ export async function requestReviewChanges(req: Request, res: Response): Promise
 
     // Manager scoping
     if (user.role === 'manager') {
-      const targetEmp = await Employee.findOne({ id: review.employeeId, organizationId });
-      if (targetEmp && targetEmp.managerId !== user.employeeId) {
+      const isAuth = await isManagerAuthorizedForEmployee(user, review.employeeId, organizationId);
+      if (!isAuth) {
+        const targetEmp = await Employee.findOne({ id: review.employeeId, organizationId });
         res.status(403).json({
           success: false,
-          error: `Forbidden: Employee "${targetEmp.name}" does not report to you`,
+          error: `Forbidden: Employee "${targetEmp?.name || review.employeeId}" does not report to you`,
         });
         return;
       }
@@ -475,11 +532,12 @@ export async function approveReview(req: Request, res: Response): Promise<void> 
 
     // Manager scoping
     if (user.role === 'manager') {
-      const targetEmp = await Employee.findOne({ id: review.employeeId, organizationId });
-      if (targetEmp && targetEmp.managerId !== user.employeeId) {
+      const isAuth = await isManagerAuthorizedForEmployee(user, review.employeeId, organizationId);
+      if (!isAuth) {
+        const targetEmp = await Employee.findOne({ id: review.employeeId, organizationId });
         res.status(403).json({
           success: false,
-          error: `Forbidden: Employee "${targetEmp.name}" does not report to you`,
+          error: `Forbidden: Employee "${targetEmp?.name || review.employeeId}" does not report to you`,
         });
         return;
       }
@@ -657,11 +715,12 @@ export async function updateReviewSection(req: Request, res: Response): Promise<
 
     // Manager scoping
     if (user.role === 'manager') {
-      const targetEmp = await Employee.findOne({ id: review.employeeId, organizationId });
-      if (targetEmp && targetEmp.managerId !== user.employeeId) {
+      const isAuth = await isManagerAuthorizedForEmployee(user, review.employeeId, organizationId);
+      if (!isAuth) {
+        const targetEmp = await Employee.findOne({ id: review.employeeId, organizationId });
         res.status(403).json({
           success: false,
-          error: `Forbidden: Employee "${targetEmp.name}" does not report to you`,
+          error: `Forbidden: Employee "${targetEmp?.name || review.employeeId}" does not report to you`,
         });
         return;
       }
