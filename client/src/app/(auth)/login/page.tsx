@@ -89,7 +89,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="e.g. admin@reviewforge.io"
+                placeholder="e.g. admin@gmail.com"
                 className="w-full text-xs px-3 py-2 bg-[#FAFBF8] border border-[#E6E8E1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#17251F]"
               />
             </div>
@@ -133,15 +133,15 @@ export default function LoginPage() {
             <div className="grid grid-cols-2 gap-2 text-[11px]">
               <button
                 type="button"
-                onClick={() => setDemoCreds('admin@reviewforge.io', 'Admin@ReviewForge2026!')}
+                onClick={() => setDemoCreds('admin@gmail.com', 'Admin@123')}
                 className="p-2 text-left rounded-lg border border-[#E6E8E1] bg-[#FAFBF8] hover:bg-[#EEF9D1] hover:border-[#D6EFA0] transition-colors"
               >
                 <div className="font-bold text-[#17251F]">HR Admin</div>
-                <div className="text-[10px] text-[#747D75]">admin@reviewforge.io</div>
+                <div className="text-[10px] text-[#747D75]">admin@gmail.com</div>
               </button>
               <button
                 type="button"
-                onClick={() => setDemoCreds('elena.rostova@reviewforge.io', 'Manager@ReviewForge2026!')}
+                onClick={() => setDemoCreds('elena.rostova@reviewforge.io', 'ReviewForgeDemo123!')}
                 className="p-2 text-left rounded-lg border border-[#E6E8E1] bg-[#FAFBF8] hover:bg-[#EEF9D1] hover:border-[#D6EFA0] transition-colors"
               >
                 <div className="font-bold text-[#17251F]">Manager</div>
@@ -149,7 +149,7 @@ export default function LoginPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setDemoCreds('rahul.deshmukh@reviewforge.io', 'Employee@ReviewForge2026!')}
+                onClick={() => setDemoCreds('rahul.deshmukh@reviewforge.io', 'ReviewForgeDemo123!')}
                 className="p-2 text-left rounded-lg border border-[#E6E8E1] bg-[#FAFBF8] hover:bg-[#EEF9D1] hover:border-[#D6EFA0] transition-colors"
               >
                 <div className="font-bold text-[#17251F]">Employee</div>
@@ -157,7 +157,7 @@ export default function LoginPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setDemoCreds('marcus.vance@reviewforge.io', 'Peer@ReviewForge2026!')}
+                onClick={() => setDemoCreds('marcus.vance@reviewforge.io', 'ReviewForgeDemo123!')}
                 className="p-2 text-left rounded-lg border border-[#E6E8E1] bg-[#FAFBF8] hover:bg-[#EEF9D1] hover:border-[#D6EFA0] transition-colors"
               >
                 <div className="font-bold text-[#17251F]">Peer Reviewer</div>
