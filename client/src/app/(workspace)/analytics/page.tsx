@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { StatCard } from '@/components/ui/stat-card';
+import { EmptyState } from '@/components/ui/empty-state';
 import {
   BarChart3,
   TrendingUp,
@@ -17,7 +18,8 @@ import {
   Download,
   Building,
   RefreshCw,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Lock
 } from 'lucide-react';
 
 export default function AnalyticsPage() {
@@ -29,8 +31,11 @@ export default function AnalyticsPage() {
     getAnalyticsSummary,
     exportAnalytics,
     dbConnected,
-    showToast
+    showToast,
+    activeRole
   } = useStore();
+
+  const isAuthorized = activeRole === 'manager' || activeRole === 'hr_admin';
 
   const [selectedCycleId, setSelectedCycleId] = useState(
     reviewCycles[0]?.id || 'cycle-2026-annual'
@@ -130,6 +135,18 @@ export default function AnalyticsPage() {
     { theme: 'Cross-timezone synchronous communication balance', frequency: '45% flagged' },
     { theme: 'Earlier mobile viewport stress-testing in discovery', frequency: '38% flagged' }
   ];
+
+  if (!isAuthorized) {
+    return (
+      <div className="max-w-2xl mx-auto py-12">
+        <EmptyState
+          icon={<Lock className="w-8 h-8 text-[#9E2A2B]" />}
+          title="Access Restricted: Talent Analytics"
+          description="Talent analytics, cycle progress metrics, and organizational completion reporting are strictly reserved for Managers and HR Administrators."
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">

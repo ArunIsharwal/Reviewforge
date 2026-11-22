@@ -211,14 +211,16 @@ export default function OKRsPage() {
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          size="sm"
-          leftIcon={<Plus className="w-4 h-4" />}
-          onClick={handleOpenAdd}
-        >
-          Add Objective
-        </Button>
+        {(activeRole === 'manager' || activeRole === 'hr_admin') && (
+          <Button
+            variant="primary"
+            size="sm"
+            leftIcon={<Plus className="w-4 h-4" />}
+            onClick={handleOpenAdd}
+          >
+            Add Objective
+          </Button>
+        )}
       </div>
 
       {/* Metric Cards Summary */}

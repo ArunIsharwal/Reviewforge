@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { Modal } from '@/components/ui/modal';
+import { EmptyState } from '@/components/ui/empty-state';
 import {
   Sparkles,
   Save,
@@ -43,8 +44,11 @@ function AIReviewStudioContent() {
     submitReviewForApproval,
     synthesizeReview,
     showToast,
-    dbConnected
+    dbConnected,
+    activeRole
   } = useStore();
+
+  const isAuthorized = activeRole === 'manager' || activeRole === 'hr_admin';
 
   // Active employee selection
   const [selectedEmpId, setSelectedEmpId] = useState<string>(
@@ -243,6 +247,20 @@ function AIReviewStudioContent() {
     'futureGoals',
     'managerRecommendations'
   ];
+
+  if (!isAuthorized) {
+    return (
+      <div className="max-w-2xl mx-auto py-12">
+        <EmptyState
+          icon={<Lock className="w-8 h-8 text-[#9E2A2B]" />}
+          title="Access Restricted: AI Review Studio"
+          description="The AI Review Studio is strictly reserved for Managers and HR Administrators to evaluate direct reports and synthesize calibrated reviews."
+          actionLabel="Return to Dashboard"
+          onAction={() => router.push('/dashboard')}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 max-w-[1700px] mx-auto pb-12">

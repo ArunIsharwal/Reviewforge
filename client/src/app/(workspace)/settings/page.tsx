@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs } from '@/components/ui/tabs';
+import { EmptyState } from '@/components/ui/empty-state';
 import {
   RotateCcw,
   ShieldCheck,
@@ -109,6 +110,20 @@ export default function SettingsPage() {
     { id: 'demo', label: 'Demo Role & Sandbox Controls' },
     { id: 'audit', label: 'Security Audit Log' }
   ];
+
+  const isAuthorized = activeRole === 'hr_admin';
+
+  if (!isAuthorized) {
+    return (
+      <div className="max-w-2xl mx-auto py-12">
+        <EmptyState
+          icon={<Lock className="w-8 h-8 text-[#9E2A2B]" />}
+          title="Access Restricted: Enterprise Administration"
+          description="Platform configuration and organizational governance settings are strictly restricted to HR Administrators."
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">

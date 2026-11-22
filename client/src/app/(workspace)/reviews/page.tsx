@@ -16,13 +16,21 @@ import {
 } from 'lucide-react';
 
 export default function ReviewsPage() {
-  const { performanceReviews, reviewCycles } = useStore();
+  const { performanceReviews, reviewCycles, activeRole, authUser } = useStore();
 
   const [search, setSearch] = useState('');
   const [selectedCycle, setSelectedCycle] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
-  const filteredReviews = performanceReviews.filter(r => {
+  const currentEmpId = authUser?.employeeId || 'emp-002';
+  const isEmployee = activeRole === 'employee';
+
+  // Strict RBAC: Employees can only view their own released reviews
+  const accessibleReviews = isEmployee
+    ? performanceReviews.filter(r => r.employeeId === currentEmpId && r.status === 'Released')
+    : performanceReviews;
+
+  const filteredReviews = accessibleReviews.filter(r => {
     const matchesSearch =
       r.employeeName.toLowerCase().includes(search.toLowerCase()) ||
       r.jobTitle.toLowerCase().includes(search.toLowerCase()) ||
@@ -65,15 +73,17 @@ export default function ReviewsPage() {
           </p>
         </div>
 
-        <Link href="/ai-review-studio">
-          <Button
-            variant="accent"
-            size="sm"
-            leftIcon={<Sparkles className="w-4 h-4 text-[#17251F]" />}
-          >
-            Create / Synthesize Review
-          </Button>
-        </Link>
+        {(activeRole === 'manager' || activeRole === 'hr_admin') && (
+          <Link href="/ai-review-studio">
+            <Button
+              variant="accent"
+              size="sm"
+              leftIcon={<Sparkles className="w-4 h-4 text-[#17251F]" />}
+            >
+              Create / Synthesize Review
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Filter Toolbar */}

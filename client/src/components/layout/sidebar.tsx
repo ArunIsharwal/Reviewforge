@@ -140,32 +140,42 @@ export function Sidebar({
           : [])
       ]
     },
-    {
-      title: 'INTELLIGENCE',
-      items: [
-        {
-          label: 'AI Review Studio',
-          href: '/ai-review-studio',
-          icon: <Sparkles className="w-4 h-4 shrink-0 text-[#17251F]" />,
-          isHighlight: true
-        },
-        {
-          label: 'Analytics & Reports',
-          href: '/analytics',
-          icon: <BarChart3 className="w-4 h-4 shrink-0" />
-        }
-      ]
-    },
-    {
-      title: 'ADMINISTRATION',
-      items: [
-        {
-          label: 'Settings',
-          href: '/settings',
-          icon: <Settings className="w-4 h-4 shrink-0" />
-        }
-      ]
-    }
+    // Intelligence features are only accessible to Managers and HR Administrators
+    ...(activeRole === 'manager' || activeRole === 'hr_admin'
+      ? [
+          {
+            title: 'INTELLIGENCE',
+            items: [
+              {
+                label: 'AI Review Studio',
+                href: '/ai-review-studio',
+                icon: <Sparkles className="w-4 h-4 shrink-0 text-[#17251F]" />,
+                isHighlight: true
+              },
+              {
+                label: 'Analytics & Reports',
+                href: '/analytics',
+                icon: <BarChart3 className="w-4 h-4 shrink-0" />
+              }
+            ]
+          }
+        ]
+      : []),
+    // Organization settings is administrative only
+    ...(activeRole === 'hr_admin'
+      ? [
+          {
+            title: 'ADMINISTRATION',
+            items: [
+              {
+                label: 'Settings',
+                href: '/settings',
+                icon: <Settings className="w-4 h-4 shrink-0" />
+              }
+            ]
+          }
+        ]
+      : [])
   ];
 
   const sidebarContent = (

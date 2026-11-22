@@ -95,8 +95,13 @@ const StoreContext = createContext<StoreContextValue | undefined>(undefined);
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [isHydrated, setIsHydrated] = useState(false);
   const [dbConnected, setDbConnected] = useState(false);
-  const [authUser, setAuthUser] = useState<SessionUser | null>(null);
-  const [activeRole, setActiveRoleState] = useState<UserRole>('hr_admin');
+  const [authUser, setAuthUser] = useState<SessionUser | null>(() => {
+    return typeof window !== 'undefined' ? apiClient.getStoredUser() : null;
+  });
+  const [activeRole, setActiveRoleState] = useState<UserRole>(() => {
+    const storedUser = typeof window !== 'undefined' ? apiClient.getStoredUser() : null;
+    return storedUser?.role || DataRepository.getActiveRole();
+  });
   const [departments, setDepartments] = useState<Department[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [reviewCycles, setReviewCycles] = useState<ReviewCycle[]>([]);
@@ -115,7 +120,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const dbConnectedRef = useRef(false);
 
   const loadLocalSnapshot = useCallback((overrideRole?: UserRole) => {
-    const role = overrideRole || DataRepository.getActiveRole();
+    const storedUser = apiClient.getStoredUser();
+    const role = overrideRole || storedUser?.role || DataRepository.getActiveRole();
     setActiveRoleState(role);
     setDepartments(DataRepository.getDepartments());
     setEmployees(DataRepository.getEmployees());
@@ -145,7 +151,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const storedUser = apiClient.getStoredUser();
         if (storedUser) {
           setAuthUser(storedUser);
-          if (syncRoleFromSession && storedUser.role) {
+          if (storedUser.role !== 'hr_admin' || syncRoleFromSession) {
             DataRepository.setActiveRole(storedUser.role);
             setActiveRoleState(storedUser.role);
           }
@@ -172,7 +178,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         };
         setAuthUser(sessionUser);
 
-        if (syncRoleFromSession && user.role) {
+        // For non-admin users, activeRole must strictly match authenticated role
+        if (user.role !== 'hr_admin' || syncRoleFromSession) {
           DataRepository.setActiveRole(user.role);
           setActiveRoleState(user.role);
         }
@@ -180,7 +187,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const storedUser = apiClient.getStoredUser();
         if (storedUser) {
           setAuthUser(storedUser);
-          if (syncRoleFromSession && storedUser.role) {
+          if (storedUser.role !== 'hr_admin' || syncRoleFromSession) {
             DataRepository.setActiveRole(storedUser.role);
             setActiveRoleState(storedUser.role);
           }
@@ -395,6 +402,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   );
 
   const setActiveRole = useCallback((role: UserRole) => {
+    const currentUser = apiClient.getStoredUser();
+    if (currentUser && currentUser.role !== 'hr_admin' && role !== currentUser.role) {
+      showToast('Role switching is restricted for standard user accounts', 'warning');
+      return;
+    }
     DataRepository.setActiveRole(role);
     setActiveRoleState(role);
     if (dbConnectedRef.current) {
@@ -1328,11 +1340,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     await apiClient.logout();
     setAuthUser(null);
-    showToast('Signed out of ReviewForge session', 'info');
+    DataRepository.setActiveRole('hr_admin');
     if (typeof window !== 'undefined') {
+      localStorage.removeItem('reviewforge_active_role');
       window.location.href = '/login';
     }
-  }, [showToast]);
+  }, []);
 
   const value: StoreContextValue = {
     isHydrated,

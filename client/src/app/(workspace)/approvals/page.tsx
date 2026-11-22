@@ -38,6 +38,8 @@ export default function ApprovalsPage() {
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   const isHrAdmin = activeRole === 'hr_admin' || authUser?.role === 'hr_admin';
+  const isManager = activeRole === 'manager' || authUser?.role === 'manager';
+  const isAuthorized = isHrAdmin || isManager;
 
   // Reviews requiring approval
   const pendingReviews = performanceReviews.filter(
@@ -48,6 +50,18 @@ export default function ApprovalsPage() {
   const approvedReviews = performanceReviews.filter(
     r => r.status === 'Approved' || r.status === 'Released'
   );
+
+  if (!isAuthorized) {
+    return (
+      <div className="max-w-2xl mx-auto py-12">
+        <EmptyState
+          icon={<AlertTriangle className="w-8 h-8 text-[#9E2A2B]" />}
+          title="Access Restricted: Approval Queue"
+          description="The Review Approval Queue is accessible only to Managers and HR Administrators for calibration and executive sign-off."
+        />
+      </div>
+    );
+  }
 
   const handleApprove = async (review: PerformanceReview) => {
     setActionLoadingId(review.id);

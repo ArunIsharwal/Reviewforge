@@ -34,6 +34,7 @@ export default function FeedbackPage() {
     createFeedbackRequest,
     declineFeedbackRequest,
     activeRole,
+    authUser,
     reviewCycles,
   } = useStore();
 
@@ -73,18 +74,30 @@ export default function FeedbackPage() {
   const targetEmployee = employees.find((e) => e.id === targetEmpId) || employees[0];
   const activeCycle = reviewCycles.find((c) => c.status === 'Active') || reviewCycles[0];
 
-  const submittedFeedback = feedback.filter((f) => f.status === 'Submitted');
-  const pendingRequests = feedbackRequests.filter((r) => r.status === 'Pending');
+  const currentEmpId = authUser?.employeeId || 'emp-002';
+  const isEmployee = activeRole === 'employee';
+
+  // Strict employee privacy check: employees can only view feedback where they are the recipient or author
+  const accessibleFeedback = isEmployee
+    ? feedback.filter(f => f.targetEmployeeId === currentEmpId || f.providerEmployeeId === currentEmpId)
+    : feedback;
+
+  const accessibleRequests = isEmployee
+    ? feedbackRequests.filter(r => r.targetEmployeeId === currentEmpId || r.reviewerEmployeeId === currentEmpId)
+    : feedbackRequests;
+
+  const submittedFeedback = accessibleFeedback.filter((f) => f.status === 'Submitted');
+  const pendingRequests = accessibleRequests.filter((r) => r.status === 'Pending');
 
   // Compute aggregate stats for summary bar
-  const totalFeedbackCount = feedback.length;
-  const anonymousCount = feedback.filter((f) => f.isAnonymous).length;
+  const totalFeedbackCount = accessibleFeedback.length;
+  const anonymousCount = accessibleFeedback.filter((f) => f.isAnonymous).length;
   const anonymousPercentage = totalFeedbackCount > 0 ? Math.round((anonymousCount / totalFeedbackCount) * 100) : 0;
 
   const averageRating =
     totalFeedbackCount > 0
       ? (
-          feedback.reduce((sum, f) => {
+          accessibleFeedback.reduce((sum, f) => {
             const r = f.ratings;
             return sum + (r.collaboration + r.communication + r.problemSolving + r.technicalContribution + r.leadership) / 5;
           }, 0) / totalFeedbackCount
@@ -347,8 +360,8 @@ export default function FeedbackPage() {
       ) : (
         /* Tab Content: Feedback Items Grid */
         <div className="space-y-4">
-          {(activeTab === 'all' ? feedback : submittedFeedback).length > 0 ? (
-            (activeTab === 'all' ? feedback : submittedFeedback).map((item) => {
+          {(activeTab === 'all' ? accessibleFeedback : submittedFeedback).length > 0 ? (
+            (activeTab === 'all' ? accessibleFeedback : submittedFeedback).map((item) => {
               const isEmployeeView = activeRole === 'employee';
               const displayProviderName =
                 item.isAnonymous && isEmployeeView

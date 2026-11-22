@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowRight, AlertCircle, CheckCircle2, KeyRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { apiClient } from '@/lib/api-client';
+import { DataRepository } from '@/lib/storage/repository';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,6 +27,13 @@ export default function LoginPage() {
 
       if (!res.success || !res.user) {
         throw new Error(res.error || 'Authentication failed. Please check credentials.');
+      }
+
+      // Synchronize role and storage immediately with authenticated user role
+      DataRepository.setActiveRole(res.user.role);
+      localStorage.setItem('reviewforge_active_role', JSON.stringify(res.user.role));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('reviewforge_storage_updated'));
       }
 
       setSuccess(`Signed in successfully as ${res.user.name} (${res.user.role}). Redirecting...`);

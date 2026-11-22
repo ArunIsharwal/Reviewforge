@@ -15,13 +15,19 @@ export default function SelfReflectionsPage() {
     employees,
     selfReflections,
     saveSelfReflection,
-    reviewCycles
+    reviewCycles,
+    activeRole,
+    authUser,
   } = useStore();
 
   const activeCycle = reviewCycles.find(c => c.status === 'Active') || reviewCycles[0];
+  const currentEmpId = authUser?.employeeId || 'emp-002';
+  const isEmployee = activeRole === 'employee';
 
-  // Current selected employee for reflection (defaults to Rahul Deshmukh or first employee)
-  const [selectedEmpId, setSelectedEmpId] = useState(employees[1]?.id || employees[0]?.id || 'emp-002');
+  // Current selected employee for reflection
+  const [selectedEmpId, setSelectedEmpId] = useState(
+    isEmployee ? currentEmpId : (employees[1]?.id || employees[0]?.id || 'emp-002')
+  );
   const existing = selfReflections.find(
     r => r.employeeId === selectedEmpId && r.reviewCycleId === activeCycle?.id
   );
@@ -119,20 +125,26 @@ export default function SelfReflectionsPage() {
           </p>
         </div>
 
-        {/* Demo employee switcher */}
+        {/* Employee selector */}
         <div className="flex items-center gap-2 text-xs">
           <span className="font-semibold text-[#17251F]">Reflection For:</span>
-          <select
-            value={selectedEmpId}
-            onChange={e => handleEmployeeChange(e.target.value)}
-            className="px-3 py-1.5 bg-[#FFFFFF] border border-[#E6E8E1] rounded-lg text-xs font-semibold text-[#17251F] focus:outline-none"
-          >
-            {employees.map(e => (
-              <option key={e.id} value={e.id}>
-                {e.name} ({e.jobTitle})
-              </option>
-            ))}
-          </select>
+          {isEmployee ? (
+            <span className="px-3 py-1.5 bg-[#FAFBF8] border border-[#E6E8E1] rounded-lg text-xs font-semibold text-[#17251F]">
+              {selectedEmployee.name} ({selectedEmployee.jobTitle})
+            </span>
+          ) : (
+            <select
+              value={selectedEmpId}
+              onChange={e => handleEmployeeChange(e.target.value)}
+              className="px-3 py-1.5 bg-[#FFFFFF] border border-[#E6E8E1] rounded-lg text-xs font-semibold text-[#17251F] focus:outline-none"
+            >
+              {employees.map(e => (
+                <option key={e.id} value={e.id}>
+                  {e.name} ({e.jobTitle})
+                </option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 

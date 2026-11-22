@@ -6,9 +6,12 @@ import { UserRole } from '@/types';
 import { ShieldCheck, UserCheck, User, Users, ChevronDown } from 'lucide-react';
 
 export function RoleSwitcher() {
-  const { activeRole, setActiveRole } = useStore();
+  const { activeRole, setActiveRole, authUser } = useStore();
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  // If authenticated as non-admin, role is locked to their real authenticated role
+  const isLocked = Boolean(authUser && authUser.role !== 'hr_admin');
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -52,23 +55,36 @@ export function RoleSwitcher() {
   return (
     <div className="relative" ref={ref}>
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-2.5 py-1.5 bg-[#FFFFFF] border border-[#E6E8E1] hover:border-[#D0D4CA] rounded-lg text-xs font-medium text-[#202820] shadow-2xs transition-all cursor-pointer"
-        title="Switch demo role perspective"
+        onClick={() => {
+          if (!isLocked) {
+            setIsOpen(!isOpen);
+          }
+        }}
+        disabled={isLocked}
+        className={`flex items-center gap-2 px-2.5 py-1.5 bg-[#FFFFFF] border border-[#E6E8E1] rounded-lg text-xs font-medium text-[#202820] shadow-2xs transition-all ${
+          isLocked
+            ? 'opacity-90 cursor-default'
+            : 'hover:border-[#D0D4CA] cursor-pointer'
+        }`}
+        title={
+          isLocked
+            ? `Role locked to authenticated account (${authUser?.name})`
+            : 'Switch demo role perspective'
+        }
       >
         <span className="p-1 rounded bg-[#F0F2EB]">{current.icon}</span>
         <div className="text-left hidden sm:block">
           <div className="text-[10px] text-[#747D75] uppercase tracking-wider leading-none">
-            Role
+            {isLocked ? 'Account Role' : 'Role'}
           </div>
           <div className="text-xs font-semibold text-[#17251F] mt-0.5">
             {current.title}
           </div>
         </div>
-        <ChevronDown className="w-3.5 h-3.5 text-[#747D75] ml-0.5" />
+        {!isLocked && <ChevronDown className="w-3.5 h-3.5 text-[#747D75] ml-0.5" />}
       </button>
 
-      {isOpen && (
+      {isOpen && !isLocked && (
         <div className="absolute right-0 mt-1.5 w-72 bg-[#FFFFFF] border border-[#E6E8E1] rounded-xl shadow-lg p-1.5 z-50 animate-in fade-in zoom-in-95">
           <div className="px-3 py-2 border-b border-[#E6E8E1] mb-1">
             <span className="text-xs font-semibold text-[#17251F]">

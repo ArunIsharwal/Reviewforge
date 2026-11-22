@@ -70,6 +70,40 @@ export default function ReviewDetailPage() {
     );
   }
 
+  const currentEmpId = authUser?.employeeId || 'emp-002';
+  const isEmployee = activeRole === 'employee';
+
+  // Strict employee privacy check: only own released reviews can be inspected by employees
+  if (isEmployee) {
+    if (review.employeeId !== currentEmpId) {
+      return (
+        <div className="max-w-4xl mx-auto py-12">
+          <EmptyState
+            icon={<AlertTriangle className="w-8 h-8 text-[#9E2A2B]" />}
+            title="Access Restricted: Confidential Evaluation"
+            description="Employees are only authorized to view their own personal performance evaluations."
+            actionLabel="Back to Reviews"
+            onAction={() => router.push('/reviews')}
+          />
+        </div>
+      );
+    }
+
+    if (review.status !== 'Released') {
+      return (
+        <div className="max-w-4xl mx-auto py-12">
+          <EmptyState
+            icon={<AlertTriangle className="w-8 h-8 text-[#D97706]" />}
+            title="Review Under Active Calibration"
+            description="Your performance review is currently undergoing manager drafting and executive approval. It will become visible here once formally released by leadership."
+            actionLabel="Back to Reviews"
+            onAction={() => router.push('/reviews')}
+          />
+        </div>
+      );
+    }
+  }
+
   const sectionKeys: (keyof PerformanceReview['sections'])[] = [
     'overallSummary',
     'majorAchievements',

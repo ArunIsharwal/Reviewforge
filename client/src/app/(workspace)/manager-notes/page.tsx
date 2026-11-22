@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { useStore } from '@/lib/storage/use-store';
 import { ManagerNote, ManagerNoteCategory } from '@/types';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
@@ -24,6 +25,7 @@ import {
 } from 'lucide-react';
 
 export default function ManagerNotesPage() {
+  const router = useRouter();
   const {
     managerNotes,
     employees,
@@ -100,7 +102,9 @@ export default function ManagerNotesPage() {
         <EmptyState
           icon={<Lock className="w-8 h-8 text-[#9E2A2B]" />}
           title="Access Restricted: Confidential Manager Journal"
-          description="Manager observations are strictly private and accessible only to managers and HR administrators. Switch your demo role to Manager or HR Administrator to access this view."
+          description="Manager observations are strictly private working notes accessible only to people managers and HR administrators."
+          actionLabel="Return to Dashboard"
+          onAction={() => router.push('/dashboard')}
         />
       </div>
     );
