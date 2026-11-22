@@ -35,6 +35,7 @@ export default function OKRsPage() {
     updateKeyResultProgress,
     deleteOKR,
     activeRole,
+    authUser,
   } = useStore();
 
   const [selectedQuarter, setSelectedQuarter] = useState<string>('all');
@@ -87,12 +88,14 @@ export default function OKRsPage() {
   const totalKeyResults = okrs.reduce((sum, o) => sum + (o.keyResults?.length || 0), 0);
 
   const handleOpenAdd = () => {
+    const currentEmpId = authUser?.employeeId || 'emp-002';
+    const currentDeptId = employees.find(e => e.id === currentEmpId)?.departmentId || departments[0]?.id || 'dept-eng';
     setFormData({
-      employeeId: employees[1]?.id || 'emp-002',
+      employeeId: activeRole === 'employee' ? currentEmpId : (employees[1]?.id || 'emp-002'),
       quarter: 'Q4',
       year: 2026,
       objective: 'Scale Review Generation Worker Throughput & Resilience',
-      departmentId: departments[0]?.id || 'dept-eng',
+      departmentId: currentDeptId,
       keyResults: [
         {
           id: `kr-${Date.now()}-1`,
@@ -211,16 +214,14 @@ export default function OKRsPage() {
           </p>
         </div>
 
-        {(activeRole === 'manager' || activeRole === 'hr_admin') && (
-          <Button
-            variant="primary"
-            size="sm"
-            leftIcon={<Plus className="w-4 h-4" />}
-            onClick={handleOpenAdd}
-          >
-            Add Objective
-          </Button>
-        )}
+        <Button
+          variant="primary"
+          size="sm"
+          leftIcon={<Plus className="w-4 h-4" />}
+          onClick={handleOpenAdd}
+        >
+          Add Objective
+        </Button>
       </div>
 
       {/* Metric Cards Summary */}
@@ -484,17 +485,23 @@ export default function OKRsPage() {
             </div>
             <div>
               <label className="block font-semibold text-[#17251F] mb-1">Assigned Employee</label>
-              <select
-                value={formData.employeeId}
-                onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
-                className="w-full px-3 py-2 bg-[#FFFFFF] border border-[#E6E8E1] rounded-lg text-xs focus:ring-1 focus:ring-[#17251F]"
-              >
-                {employees.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.name}
-                  </option>
-                ))}
-              </select>
+              {activeRole === 'employee' ? (
+                <div className="w-full px-3 py-2 bg-[#FAFBF8] border border-[#E6E8E1] rounded-lg text-xs font-semibold text-[#17251F]">
+                  {employees.find((e) => e.id === formData.employeeId)?.name || 'Rahul Deshmukh'}
+                </div>
+              ) : (
+                <select
+                  value={formData.employeeId}
+                  onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#FFFFFF] border border-[#E6E8E1] rounded-lg text-xs focus:ring-1 focus:ring-[#17251F]"
+                >
+                  {employees.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
           </div>
 

@@ -8,7 +8,7 @@ import { Organization } from './models/Organization.js';
 import { ReviewCycle } from './models/ReviewCycle.js';
 import { seedInitialFeedback } from './models/Feedback.js';
 import { seedInitialFeedbackRequests } from './models/FeedbackRequest.js';
-import { seedInitialOKRs } from './models/OKR.js';
+import { OKR, seedInitialOKRs } from './models/OKR.js';
 import { seedInitialManagerNotes } from './models/ManagerNote.js';
 import { seedInitialSelfReflections } from './models/SelfReflection.js';
 import { seedInitialPerformanceReviews } from './models/PerformanceReview.js';
@@ -41,8 +41,9 @@ async function startServer() {
         await ReviewCycle.seedDefaultReviewCycles().catch((e) => {
           console.warn('ReviewCycle seed warning:', e.message);
         });
-        // Only seed demo review artifacts if explicitly enabled
-        if (process.env.SEED_DEMO_REVIEWS === 'true') {
+        // Seed initial review artifacts if empty or explicitly enabled
+        const okrCount = await OKR.countDocuments({ organizationId: 'org-reviewforge-default' });
+        if (okrCount === 0 || process.env.SEED_DEMO_REVIEWS === 'true') {
           await seedInitialFeedback().catch((e) => console.warn('Feedback seed warning:', e.message));
           await seedInitialFeedbackRequests().catch((e) => console.warn('FeedbackRequest seed warning:', e.message));
           await seedInitialOKRs().catch((e) => console.warn('OKR seed warning:', e.message));

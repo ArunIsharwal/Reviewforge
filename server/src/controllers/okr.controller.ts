@@ -97,20 +97,30 @@ export async function getOKRs(req: Request, res: Response): Promise<void> {
     } else {
       // Employee / Peer Reviewer
       const callerEmpId = caller.employeeId || 'emp-nonexistent';
+      let deptId = caller.departmentId;
+      if (!deptId && caller.employeeId) {
+        const empDoc = await Employee.findOne({ id: caller.employeeId, organizationId });
+        deptId = empDoc?.departmentId;
+      }
+
       if (employeeId) {
         if (employeeId === callerEmpId) {
           filter.employeeId = callerEmpId;
         } else {
           // Only allow viewing peers in the same department
           filter.employeeId = employeeId;
-          filter.departmentId = caller.departmentId;
+          if (deptId) filter.departmentId = deptId;
         }
       } else {
         // By default show own OKRs or department OKRs
-        filter.$or = [
-          { employeeId: callerEmpId },
-          { departmentId: caller.departmentId },
-        ];
+        if (deptId) {
+          filter.$or = [
+            { employeeId: callerEmpId },
+            { departmentId: deptId },
+          ];
+        } else {
+          filter.employeeId = callerEmpId;
+        }
       }
     }
 
