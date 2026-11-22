@@ -283,8 +283,8 @@ function AIReviewStudioContent() {
               <h1 className="text-lg font-bold text-[#17251F] tracking-tight">
                 AI Performance Review Studio
               </h1>
-              <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-[#FAFBF8] border border-[#E6E8E1] text-[#747D75]">
-                {LocalReviewSynthesizer.ENGINE_LABEL}
+              <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-[#FAFBF8] border border-[#E6E8E1] text-[#2C5E1A]">
+                {currentReview?.synthesisEngine || (dbConnected ? 'Google Gemini AI (Live Model)' : LocalReviewSynthesizer.ENGINE_LABEL)}
               </span>
             </div>
             <p className="text-xs text-[#747D75] mt-0.5">
@@ -515,7 +515,7 @@ function AIReviewStudioContent() {
                           disabled={isRegenerating}
                           onClick={() => handleRegenerateSection(key)}
                           className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-[#747D75] hover:text-[#17251F] hover:bg-[#F0F2EB] rounded-md transition-colors cursor-pointer disabled:opacity-50"
-                          title="Regenerate this section using local mock engine"
+                          title="Regenerate this section using Google Gemini AI"
                         >
                           <RotateCcw className={`w-3 h-3 ${isRegenerating ? 'animate-spin' : ''}`} />
                           <span>Regenerate</span>

@@ -52,7 +52,7 @@ export function Sidebar({
   onCloseMobile
 }: SidebarProps) {
   const pathname = usePathname();
-  const { activeRole, performanceReviews, feedback } = useStore();
+  const { activeRole, performanceReviews, feedback, dbConnected } = useStore();
 
   const pendingApprovalsCount = performanceReviews.filter(
     r => r.status === 'Pending Approval'
@@ -272,11 +272,11 @@ export function Sidebar({
       <div className="p-3 border-t border-[#E6E8E1] bg-[#FAFBF8] shrink-0">
         {!isCollapsed && (
           <div className="mb-2 p-2 rounded-lg bg-[#FFFFFF] border border-[#E6E8E1] text-[10px] text-[#747D75] flex items-start gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-[#5876D8] shrink-0 mt-0.5" />
+            <ShieldCheck className={`w-3.5 h-3.5 ${dbConnected ? 'text-[#2C5E1A]' : 'text-[#5876D8]'} shrink-0 mt-0.5`} />
             <div>
-              <span className="font-semibold text-[#17251F]">Demo Engine</span>
+              <span className="font-semibold text-[#17251F]">{dbConnected ? 'Google Gemini AI' : 'Demo Engine'}</span>
               <p className="text-[9px] text-[#747D75] leading-tight mt-0.5">
-                Deterministic mock AI review synthesizer.
+                {dbConnected ? 'Live Google Gemini LLM synthesis active.' : 'Deterministic mock AI review synthesizer.'}
               </p>
             </div>
           </div>
