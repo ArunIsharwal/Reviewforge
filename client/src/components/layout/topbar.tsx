@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useStore } from '@/lib/storage/use-store';
@@ -31,11 +31,24 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
     settings,
     dbConnected,
     authUser,
+    activeRole,
     logout,
     unreadNotifCount,
   } = useStore();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Derive breadcrumb from pathname
   const pathParts = pathname.split('/').filter(Boolean);
@@ -175,12 +188,31 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
           {/* Role Switcher */}
           <RoleSwitcher />
 
-          {/* User Avatar & Login Portal */}
-          <div className="flex items-center gap-1.5 pl-1 border-l border-[#E6E8E1]">
-            <Link
-              href="/login"
-              className="flex items-center gap-2 hover:opacity-85 transition-opacity"
-              title={authUser ? `Signed in as ${authUser.name} (${authUser.email})` : 'Sign in / Account Portal'}
+          {/* User Avatar & Login/Logout Portal */}
+          <div className="relative flex items-center gap-1.5 pl-1 border-l border-[#E6E8E1]" ref={userMenuRef}>
+            {/* Always-visible Sign Out Button */}
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm('Sign out of ReviewForge session?')) {
+                  void logout();
+                }
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[#747D75] hover:text-[#9E2A2B] hover:bg-red-50 border border-[#E6E8E1] hover:border-red-200 transition-colors cursor-pointer shadow-2xs"
+              title="Sign out of ReviewForge session"
+              aria-label="Sign out"
+            >
+              <LogOut className="w-3.5 h-3.5 text-[#9E2A2B]" />
+              <span className="hidden sm:inline">Sign Out</span>
+            </button>
+
+            {/* User Avatar with interactive dropdown */}
+            <button
+              type="button"
+              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+              className="flex items-center gap-1 p-0.5 rounded-full hover:ring-2 hover:ring-[#C8ED78] transition-all cursor-pointer"
+              title={authUser ? `Account: ${authUser.name}` : 'Click for account options'}
+              aria-label="User menu"
             >
               <div className="w-8 h-8 rounded-full bg-[#17251F] text-[#FFFFFF] flex items-center justify-center text-xs font-semibold ring-2 ring-[#C8ED78]/60">
                 {authUser?.name
@@ -192,22 +224,53 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
                       .toUpperCase()
                   : 'RF'}
               </div>
-            </Link>
+            </button>
 
-            {authUser && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (window.confirm('Sign out of ReviewForge?')) {
-                    void logout();
-                  }
-                }}
-                className="p-1.5 rounded-lg text-[#747D75] hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                title="Sign out of current session"
-                aria-label="Sign out"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-              </button>
+            {/* User Profile Dropdown Menu */}
+            {isUserMenuOpen && (
+              <div className="absolute right-0 top-11 w-64 bg-[#FFFFFF] border border-[#E6E8E1] rounded-xl shadow-lg p-2 z-50 animate-in fade-in zoom-in-95 text-xs">
+                <div className="px-3 py-2 border-b border-[#E6E8E1] mb-1">
+                  <div className="font-bold text-[#17251F] truncate">
+                    {authUser?.name || (activeRole === 'hr_admin' ? 'HR Administrator' : activeRole === 'manager' ? 'Elena Rostova (Manager)' : 'ReviewForge User')}
+                  </div>
+                  <div className="text-[11px] text-[#747D75] truncate">
+                    {authUser?.email || (activeRole === 'hr_admin' ? 'admin@gmail.com' : 'elena.rostova@reviewforge.io')}
+                  </div>
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#F0F2EB] text-[#17251F] uppercase">
+                      {authUser?.role || activeRole}
+                    </span>
+                    <span className="text-[10px] text-[#747D75]">
+                      {authUser ? 'Authenticated' : 'Active Session'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-0.5">
+                  <Link
+                    href="/login"
+                    onClick={() => setIsUserMenuOpen(false)}
+                    className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-[#17251F] hover:bg-[#FAFBF8] transition-colors"
+                  >
+                    <span>Switch Account / Sign In</span>
+                    <span className="text-[10px] text-[#5876D8]">→</span>
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      if (window.confirm('Sign out of ReviewForge session?')) {
+                        void logout();
+                      }
+                    }}
+                    className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 font-semibold transition-colors cursor-pointer text-left"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Sign Out (Logout)</span>
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         </div>

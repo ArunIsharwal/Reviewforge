@@ -1354,11 +1354,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [showToast]);
 
   const logout = useCallback(async () => {
-    await apiClient.logout();
+    try {
+      await apiClient.logout();
+    } catch (e) {
+      console.warn('Logout API warning:', e);
+    }
     setAuthUser(null);
     DataRepository.setActiveRole('hr_admin');
     if (typeof window !== 'undefined') {
       apiClient.clearSession();
+      localStorage.removeItem('reviewforge_active_role');
+      localStorage.removeItem('reviewforge_auth_user');
       window.location.href = '/login';
     }
   }, []);

@@ -21,6 +21,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
+  LogOut,
   X
 } from 'lucide-react';
 
@@ -52,7 +53,7 @@ export function Sidebar({
   onCloseMobile
 }: SidebarProps) {
   const pathname = usePathname();
-  const { activeRole, performanceReviews, feedback, dbConnected } = useStore();
+  const { activeRole, performanceReviews, feedback, dbConnected, logout } = useStore();
 
   const pendingApprovalsCount = performanceReviews.filter(
     r => r.status === 'Pending Approval'
@@ -296,6 +297,20 @@ export function Sidebar({
               <span>Collapse Sidebar</span>
             </div>
           )}
+        </button>
+
+        {/* Sidebar Sign Out Button */}
+        <button
+          onClick={() => {
+            if (window.confirm('Sign out of ReviewForge session?')) {
+              void logout();
+            }
+          }}
+          className="flex w-full items-center justify-center md:justify-start gap-2 px-2.5 py-1.5 mt-1 rounded-lg text-xs font-semibold text-[#747D75] hover:text-[#9E2A2B] hover:bg-red-50 border border-transparent hover:border-red-100 transition-colors cursor-pointer"
+          title="Sign out of ReviewForge"
+        >
+          <LogOut className="w-3.5 h-3.5 text-[#9E2A2B] shrink-0" />
+          {!isCollapsed && <span>Sign Out</span>}
         </button>
       </div>
     </div>
