@@ -192,20 +192,25 @@ export async function createEmployee(req: Request, res: Response, next: NextFunc
       throw new AppError(`An employee with email '${payload.email}' already exists`, 409, 'CONFLICT');
     }
 
-    // Auto-generate employee ID and number if not explicitly specified
-    const empId = payload.id || (await Employee.getNextEmployeeId(orgId));
-    const empNum = payload.employeeNumber || (await Employee.getNextEmployeeNumber(orgId));
-
-    // Check for ID collision if provided
-    const existingId = await Employee.findOne({ organizationId: orgId, id: empId });
-    if (existingId) {
-      throw new AppError(`An employee with ID '${empId}' already exists`, 409, 'CONFLICT');
+    // Auto-generate employee ID and number if not explicitly specified or if collision occurs
+    let empId = payload.id;
+    if (!empId) {
+      empId = await Employee.getNextEmployeeId(orgId);
+    } else {
+      const existingId = await Employee.findOne({ organizationId: orgId, id: empId });
+      if (existingId) {
+        empId = await Employee.getNextEmployeeId(orgId);
+      }
     }
 
-    // Check for EmployeeNumber collision
-    const existingNum = await Employee.findOne({ organizationId: orgId, employeeNumber: empNum });
-    if (existingNum) {
-      throw new AppError(`Employee number '${empNum}' is already assigned`, 409, 'CONFLICT');
+    let empNum = payload.employeeNumber;
+    if (!empNum) {
+      empNum = await Employee.getNextEmployeeNumber(orgId);
+    } else {
+      const existingNum = await Employee.findOne({ organizationId: orgId, employeeNumber: empNum });
+      if (existingNum) {
+        empNum = await Employee.getNextEmployeeNumber(orgId);
+      }
     }
 
     // Resolve department name if not provided

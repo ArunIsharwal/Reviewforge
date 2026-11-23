@@ -115,9 +115,29 @@ export class DataRepository {
 
   static addEmployee(employee: Omit<Employee, 'id'>): Employee {
     const list = this.getEmployees();
+    let maxId = 0;
+    let maxNum = 1000;
+    for (const e of list) {
+      const matchId = e.id?.match(/emp-(\d+)/i);
+      if (matchId) {
+        const idN = parseInt(matchId[1], 10);
+        if (idN > maxId) maxId = idN;
+      }
+      const matchNum = e.employeeNumber?.match(/RF-(\d+)/i);
+      if (matchNum) {
+        const num = parseInt(matchNum[1], 10);
+        if (num > maxNum) maxNum = num;
+      }
+    }
+    const safeEmpNum =
+      employee.employeeNumber && !list.some((e) => e.employeeNumber === employee.employeeNumber)
+        ? employee.employeeNumber
+        : `RF-${maxNum + 1}`;
+
     const newEmp: Employee = {
       ...employee,
-      id: `emp-${String(list.length + 1).padStart(3, '0')}`
+      id: `emp-${String(maxId + 1).padStart(3, '0')}`,
+      employeeNumber: safeEmpNum,
     };
     list.unshift(newEmp);
     safeSet(STORAGE_KEYS.EMPLOYEES, list);

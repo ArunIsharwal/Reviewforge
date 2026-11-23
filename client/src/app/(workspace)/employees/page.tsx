@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/lib/storage/use-store';
-import { Employee, EmploymentStatus, ReviewStatus } from '@/types';
+import { Employee, EmploymentStatus, ReviewStatus, UserRole } from '@/types';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -49,6 +49,7 @@ export default function EmployeesPage() {
     email: '',
     employeeNumber: '',
     jobTitle: '',
+    role: 'employee' as UserRole,
     departmentId: departments[0]?.id || 'dept-eng',
     employmentStatus: 'Full-Time' as EmploymentStatus,
     managerName: 'Dr. Aris Thorne',
@@ -86,14 +87,22 @@ export default function EmployeesPage() {
   );
 
   const handleOpenAdd = () => {
+    // Determine the next safe employee number from the maximum existing RF-xxxx number
+    const maxNum = employees.reduce((max, emp) => {
+      const match = emp.employeeNumber?.match(/RF-(\d+)/i);
+      return match ? Math.max(max, parseInt(match[1], 10)) : max;
+    }, 1000);
+    const nextEmpNum = `RF-${maxNum + 1}`;
+
     setFormData({
       name: '',
       email: '',
-      employeeNumber: `RF-${1000 + employees.length + 1}`,
+      employeeNumber: nextEmpNum,
       jobTitle: '',
+      role: 'employee' as UserRole,
       departmentId: departments[0]?.id || 'dept-eng',
       employmentStatus: 'Full-Time',
-      managerName: 'Dr. Aris Thorne',
+      managerName: employees[0]?.name || 'Dr. Aris Thorne',
       location: 'San Francisco, CA (HQ)',
       skills: 'TypeScript, React, Node.js',
       bio: 'Enterprise contributor.'
@@ -101,31 +110,37 @@ export default function EmployeesPage() {
     setIsAddModalOpen(true);
   };
 
-  const handleSaveAdd = (e: React.FormEvent) => {
+  const handleSaveAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.email || !formData.jobTitle) return;
 
     const dept = departments.find(d => d.id === formData.departmentId);
+    const matchedMgr = employees.find(
+      emp => emp.name.toLowerCase() === formData.managerName.trim().toLowerCase()
+    );
 
-    addEmployee({
+    const result = await addEmployee({
       employeeNumber: formData.employeeNumber,
-      name: formData.name,
-      email: formData.email,
+      name: formData.name.trim(),
+      email: formData.email.trim(),
       avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
       departmentId: formData.departmentId,
       departmentName: dept ? dept.name : 'Engineering & Infrastructure',
-      jobTitle: formData.jobTitle,
-      managerId: 'emp-001',
-      managerName: formData.managerName,
+      jobTitle: formData.jobTitle.trim(),
+      managerId: matchedMgr ? matchedMgr.id : (employees[0]?.id || 'emp-001'),
+      managerName: formData.managerName.trim(),
       joinDate: new Date().toISOString().split('T')[0],
       employmentStatus: formData.employmentStatus,
       reviewStatus: 'Not Started',
-      location: formData.location,
-      bio: formData.bio,
-      skills: formData.skills.split(',').map(s => s.trim())
-    });
+      location: formData.location.trim(),
+      bio: formData.bio.trim(),
+      skills: formData.skills.split(',').map(s => s.trim()).filter(Boolean),
+      ...(formData.role ? { role: formData.role } : {})
+    } as any);
 
-    setIsAddModalOpen(false);
+    if (result) {
+      setIsAddModalOpen(false);
+    }
   };
 
   const handleOpenEdit = (emp: Employee) => {
@@ -135,6 +150,7 @@ export default function EmployeesPage() {
       email: emp.email,
       employeeNumber: emp.employeeNumber,
       jobTitle: emp.jobTitle,
+      role: 'employee' as UserRole,
       departmentId: emp.departmentId,
       employmentStatus: emp.employmentStatus,
       managerName: emp.managerName || 'None',
@@ -149,18 +165,22 @@ export default function EmployeesPage() {
     if (!editingEmployee) return;
 
     const dept = departments.find(d => d.id === formData.departmentId);
+    const matchedMgr = employees.find(
+      emp => emp.name.toLowerCase() === formData.managerName.trim().toLowerCase()
+    );
 
     updateEmployee(editingEmployee.id, {
-      name: formData.name,
-      email: formData.email,
-      jobTitle: formData.jobTitle,
+      name: formData.name.trim(),
+      email: formData.email.trim(),
+      jobTitle: formData.jobTitle.trim(),
       departmentId: formData.departmentId,
       departmentName: dept ? dept.name : editingEmployee.departmentName,
       employmentStatus: formData.employmentStatus,
-      managerName: formData.managerName,
-      location: formData.location,
-      bio: formData.bio,
-      skills: formData.skills.split(',').map(s => s.trim())
+      managerId: matchedMgr ? matchedMgr.id : editingEmployee.managerId,
+      managerName: formData.managerName.trim(),
+      location: formData.location.trim(),
+      bio: formData.bio.trim(),
+      skills: formData.skills.split(',').map(s => s.trim()).filter(Boolean)
     });
 
     setEditingEmployee(null);
@@ -503,14 +523,39 @@ export default function EmployeesPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
+              <label className="block font-semibold text-[#17251F] mb-1">Account Role</label>
+              <select
+                value={formData.role}
+                onChange={e => setFormData({ ...formData, role: e.target.value as UserRole })}
+                className="w-full px-3 py-2 bg-[#FFFFFF] border border-[#E6E8E1] rounded-lg text-xs focus:ring-1 focus:ring-[#17251F]"
+              >
+                <option value="employee">Employee</option>
+                <option value="manager">Manager</option>
+                <option value="peer_reviewer">Peer Reviewer</option>
+                <option value="hr_admin">HR Administrator</option>
+              </select>
+            </div>
+            <div>
               <label className="block font-semibold text-[#17251F] mb-1">Manager Name</label>
               <input
                 type="text"
+                list="add-managers-list"
                 value={formData.managerName}
                 onChange={e => setFormData({ ...formData, managerName: e.target.value })}
+                placeholder="Select or enter manager"
                 className="w-full px-3 py-2 bg-[#FFFFFF] border border-[#E6E8E1] rounded-lg text-xs focus:ring-1 focus:ring-[#17251F]"
               />
+              <datalist id="add-managers-list">
+                {employees.map(emp => (
+                  <option key={emp.id} value={emp.name}>
+                    {emp.jobTitle}
+                  </option>
+                ))}
+              </datalist>
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block font-semibold text-[#17251F] mb-1">Location</label>
               <input
@@ -519,6 +564,18 @@ export default function EmployeesPage() {
                 onChange={e => setFormData({ ...formData, location: e.target.value })}
                 className="w-full px-3 py-2 bg-[#FFFFFF] border border-[#E6E8E1] rounded-lg text-xs focus:ring-1 focus:ring-[#17251F]"
               />
+            </div>
+            <div>
+              <label className="block font-semibold text-[#17251F] mb-1">Employment Status</label>
+              <select
+                value={formData.employmentStatus}
+                onChange={e => setFormData({ ...formData, employmentStatus: e.target.value as EmploymentStatus })}
+                className="w-full px-3 py-2 bg-[#FFFFFF] border border-[#E6E8E1] rounded-lg text-xs focus:ring-1 focus:ring-[#17251F]"
+              >
+                <option value="Full-Time">Full-Time</option>
+                <option value="Part-Time">Part-Time</option>
+                <option value="Contractor">Contractor</option>
+              </select>
             </div>
           </div>
 
@@ -622,10 +679,21 @@ export default function EmployeesPage() {
               <label className="block font-semibold text-[#17251F] mb-1">Manager Name</label>
               <input
                 type="text"
+                list="edit-managers-list"
                 value={formData.managerName}
                 onChange={e => setFormData({ ...formData, managerName: e.target.value })}
+                placeholder="Select or enter manager"
                 className="w-full px-3 py-2 bg-[#FFFFFF] border border-[#E6E8E1] rounded-lg text-xs focus:ring-1 focus:ring-[#17251F]"
               />
+              <datalist id="edit-managers-list">
+                {employees
+                  .filter(e => e.id !== editingEmployee?.id)
+                  .map(emp => (
+                    <option key={emp.id} value={emp.name}>
+                      {emp.jobTitle}
+                    </option>
+                  ))}
+              </datalist>
             </div>
             <div>
               <label className="block font-semibold text-[#17251F] mb-1">Location</label>

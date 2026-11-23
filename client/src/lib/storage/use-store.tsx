@@ -53,7 +53,7 @@ interface StoreContextValue {
   resetAllDemoData: () => void;
   clearAllReviewData: () => Promise<void>;
   // Mutations
-  addEmployee: (employee: Omit<Employee, 'id'>) => Employee;
+  addEmployee: (employee: Omit<Employee, 'id'>) => Promise<Employee | null> | Employee;
   updateEmployee: (id: string, updates: Partial<Employee>) => void;
   deleteEmployee: (id: string, permanent?: boolean) => Promise<boolean>;
   addDepartment: (dept: Omit<Department, 'id'>) => Promise<Department | null>;
@@ -464,25 +464,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     showToast('All review data, OKRs, and notes cleared! Ready for a fresh test.', 'success');
   }, [showToast]);
 
-  const addEmployee = useCallback((emp: Omit<Employee, 'id'>) => {
-    const created = DataRepository.addEmployee(emp);
-    if (dbConnectedRef.current && apiClient.getAccessToken()) {
+  const addEmployee = useCallback(async (emp: Omit<Employee, 'id'>): Promise<Employee | null> => {
+    try {
+      if (dbConnectedRef.current && apiClient.getAccessToken()) {
+        const res = await apiClient.createEmployee(emp);
+        if (res.success && res.data) {
+          const created = res.data as Employee;
+          setEmployees(prev => [created, ...prev]);
+          showToast(`Added employee ${created.name} (${created.employeeNumber})`, 'success');
+          return created;
+        }
+      }
+      const created = DataRepository.addEmployee(emp);
       setEmployees(prev => [created, ...prev]);
-      apiClient.createEmployee(emp)
-        .then(res => {
-          if (res.success && res.data) {
-            setEmployees(prev => prev.map(e => (e.id === created.id || e.email === emp.email ? (res.data as Employee) : e)));
-          }
-        })
-        .catch(err => {
-          showToast(err.message || 'Failed saving employee to server', 'error');
-        });
-    } else {
-      loadLocalSnapshot();
+      showToast(`Added employee ${created.name} (${created.employeeNumber})`, 'success');
+      return created;
+    } catch (err: any) {
+      showToast(err.message || 'Failed saving employee to server', 'error');
+      return null;
     }
-    showToast(`Added employee ${created.name}`, 'success');
-    return created;
-  }, [loadLocalSnapshot, showToast]);
+  }, [showToast]);
 
   const updateEmployee = useCallback((id: string, updates: Partial<Employee>) => {
     DataRepository.updateEmployee(id, updates);
