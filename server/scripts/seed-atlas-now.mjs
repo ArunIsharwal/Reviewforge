@@ -1,4 +1,7 @@
 import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { seedInitialFeedback } from '../dist/models/Feedback.js';
 import { seedInitialFeedbackRequests } from '../dist/models/FeedbackRequest.js';
 import { seedInitialOKRs } from '../dist/models/OKR.js';
@@ -6,7 +9,11 @@ import { seedInitialManagerNotes } from '../dist/models/ManagerNote.js';
 import { seedInitialSelfReflections } from '../dist/models/SelfReflection.js';
 import { seedInitialPerformanceReviews } from '../dist/models/PerformanceReview.js';
 
-const uri = "mongodb+srv://arunisharwal_db_user:LdZzcZh5o8W3GqWJ@reviewforgecluster.0ldctlq.mongodb.net/reviewforge?retryWrites=true&w=majority&appName=ReviewForgeCluster";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/reviewforge';
 
 async function main() {
   await mongoose.connect(uri);
