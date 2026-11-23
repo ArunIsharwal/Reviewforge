@@ -141,8 +141,21 @@ export default function LoginPage() {
             <div className="grid grid-cols-2 gap-2 text-[11px]">
               <button
                 type="button"
+                onClick={() => setDemoCreds('sawai.singh@reviewforge.internal', 'Employee@ReviewForge2026!')}
+                className="p-2 text-left rounded-lg border border-[#C8ED78] bg-[#EEF9D1]/30 hover:bg-[#EEF9D1] hover:border-[#D6EFA0] transition-colors col-span-2 flex items-center justify-between cursor-pointer"
+              >
+                <div>
+                  <div className="font-bold text-[#17251F]">Sawai Singh (Employee)</div>
+                  <div className="text-[10px] text-[#747D75]">sawai.singh@reviewforge.internal</div>
+                </div>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[#EEF9D1] text-[#2C5E1A] border border-[#D6EFA0]">
+                  New Employee Login →
+                </span>
+              </button>
+              <button
+                type="button"
                 onClick={() => setDemoCreds('admin@gmail.com', 'Admin@123')}
-                className="p-2 text-left rounded-lg border border-[#E6E8E1] bg-[#FAFBF8] hover:bg-[#EEF9D1] hover:border-[#D6EFA0] transition-colors"
+                className="p-2 text-left rounded-lg border border-[#E6E8E1] bg-[#FAFBF8] hover:bg-[#EEF9D1] hover:border-[#D6EFA0] transition-colors cursor-pointer"
               >
                 <div className="font-bold text-[#17251F]">HR Admin</div>
                 <div className="text-[10px] text-[#747D75]">admin@gmail.com</div>
@@ -150,7 +163,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setDemoCreds('elena.rostova@reviewforge.io', 'ReviewForgeDemo123!')}
-                className="p-2 text-left rounded-lg border border-[#E6E8E1] bg-[#FAFBF8] hover:bg-[#EEF9D1] hover:border-[#D6EFA0] transition-colors"
+                className="p-2 text-left rounded-lg border border-[#E6E8E1] bg-[#FAFBF8] hover:bg-[#EEF9D1] hover:border-[#D6EFA0] transition-colors cursor-pointer"
               >
                 <div className="font-bold text-[#17251F]">Manager</div>
                 <div className="text-[10px] text-[#747D75]">elena.rostova@...</div>
@@ -158,15 +171,15 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setDemoCreds('rahul.deshmukh@reviewforge.io', 'ReviewForgeDemo123!')}
-                className="p-2 text-left rounded-lg border border-[#E6E8E1] bg-[#FAFBF8] hover:bg-[#EEF9D1] hover:border-[#D6EFA0] transition-colors"
+                className="p-2 text-left rounded-lg border border-[#E6E8E1] bg-[#FAFBF8] hover:bg-[#EEF9D1] hover:border-[#D6EFA0] transition-colors cursor-pointer"
               >
-                <div className="font-bold text-[#17251F]">Employee</div>
+                <div className="font-bold text-[#17251F]">Employee (Rahul)</div>
                 <div className="text-[10px] text-[#747D75]">rahul.deshmukh@...</div>
               </button>
               <button
                 type="button"
                 onClick={() => setDemoCreds('marcus.vance@reviewforge.io', 'ReviewForgeDemo123!')}
-                className="p-2 text-left rounded-lg border border-[#E6E8E1] bg-[#FAFBF8] hover:bg-[#EEF9D1] hover:border-[#D6EFA0] transition-colors"
+                className="p-2 text-left rounded-lg border border-[#E6E8E1] bg-[#FAFBF8] hover:bg-[#EEF9D1] hover:border-[#D6EFA0] transition-colors cursor-pointer"
               >
                 <div className="font-bold text-[#17251F]">Peer Reviewer</div>
                 <div className="text-[10px] text-[#747D75]">marcus.vance@...</div>
