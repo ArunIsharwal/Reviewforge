@@ -122,11 +122,15 @@ export function Sidebar({
           href: '/okrs',
           icon: <Target className="w-4 h-4 shrink-0" />
         },
-        {
-          label: 'Performance Reviews',
-          href: '/reviews',
-          icon: <FileCheck2 className="w-4 h-4 shrink-0" />
-        },
+        ...(activeRole !== 'peer_reviewer'
+          ? [
+              {
+                label: 'Performance Reviews',
+                href: '/reviews',
+                icon: <FileCheck2 className="w-4 h-4 shrink-0" />
+              }
+            ]
+          : []),
         // Approvals tab
         ...(activeRole === 'manager' || activeRole === 'hr_admin'
           ? [

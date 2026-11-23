@@ -259,7 +259,7 @@ export default function ApprovalsPage() {
                   <Badge variant={r.status === 'Released' ? 'blue' : 'lime'} dot>
                     {r.status}
                   </Badge>
-                  {r.status === 'Approved' && isHrAdmin && (
+                  {r.status === 'Approved' && (isHrAdmin || activeRole === 'manager' || authUser?.role === 'manager') && (
                     <Button
                       size="sm"
                       variant="primary"

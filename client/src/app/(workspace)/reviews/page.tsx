@@ -16,18 +16,30 @@ import {
 } from 'lucide-react';
 
 export default function ReviewsPage() {
-  const { performanceReviews, reviewCycles, activeRole, authUser } = useStore();
+  const { performanceReviews, reviewCycles, activeRole, authUser, employees } = useStore();
 
   const [search, setSearch] = useState('');
   const [selectedCycle, setSelectedCycle] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
-  const currentEmpId = authUser?.employeeId || 'emp-002';
+  const currentEmpId =
+    authUser?.employeeId ||
+    employees.find(e => e.email.toLowerCase() === authUser?.email?.toLowerCase())?.id ||
+    'emp-002';
   const isEmployee = activeRole === 'employee';
 
-  // Strict RBAC: Employees can only view their own released reviews
+  // Strict RBAC: Employees can view their own Approved or Released reviews
   const accessibleReviews = isEmployee
-    ? performanceReviews.filter(r => r.employeeId === currentEmpId && r.status === 'Released')
+    ? performanceReviews.filter(
+        r =>
+          (r.employeeId === currentEmpId ||
+            (authUser?.email &&
+              employees.find(e => e.id === r.employeeId)?.email?.toLowerCase() ===
+                authUser.email.toLowerCase())) &&
+          (r.status === 'Approved' || r.status === 'Released')
+      )
+    : activeRole === 'peer_reviewer'
+    ? []
     : performanceReviews;
 
   const filteredReviews = accessibleReviews.filter(r => {
@@ -196,14 +208,16 @@ export default function ReviewsPage() {
                             View / Print
                           </Button>
                         </Link>
-                        <Link href={`/ai-review-studio?employeeId=${rev.employeeId}`}>
-                          <button
-                            className="p-1.5 rounded-lg text-[#17251F] bg-[#EEF9D1] hover:bg-[#E5F5BE] transition-colors cursor-pointer"
-                            title="Edit in Review Studio"
-                          >
-                            <Sparkles className="w-3.5 h-3.5" />
-                          </button>
-                        </Link>
+                        {(activeRole === 'manager' || activeRole === 'hr_admin') && (
+                          <Link href={`/ai-review-studio?employeeId=${rev.employeeId}`}>
+                            <button
+                              className="p-1.5 rounded-lg text-[#17251F] bg-[#EEF9D1] hover:bg-[#E5F5BE] transition-colors cursor-pointer"
+                              title="Edit in Review Studio"
+                            >
+                              <Sparkles className="w-3.5 h-3.5" />
+                            </button>
+                          </Link>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -214,8 +228,12 @@ export default function ReviewsPage() {
         ) : (
           <EmptyState
             icon={<FileCheck2 className="w-8 h-8 text-[#747D75]" />}
-            title="No performance reviews found"
-            description="No reviews matched the current filter criteria."
+            title={activeRole === 'peer_reviewer' ? '360 Feedback Portal' : 'No performance reviews found'}
+            description={
+              activeRole === 'peer_reviewer'
+                ? 'Peer reviewers submit 360 feedback evaluations directly under the Feedback menu rather than inspecting final executive appraisals.'
+                : 'No performance reviews matched the current filter criteria or have been approved yet.'
+            }
           />
         )}
       </Card>

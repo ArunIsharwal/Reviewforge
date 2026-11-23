@@ -18,16 +18,10 @@ async function main() {
         console.log(`${e.id} | name: ${e.name} | managerId: ${e.managerId} | dept: ${e.departmentId}`);
     }
 
-    const emps = await db.collection('employees').find({}).toArray();
-    console.log('Employees in Atlas:', emps.length);
-    for (const e of emps) {
-        console.log(`- ${e.id} | ${e.name} | ${e.email} | ${e.departmentId}`);
-    }
-
-    const emps = await db.collection('employees').find({}).toArray();
-    console.log('Employees in Atlas:', emps.length);
-    for (const e of emps) {
-        console.log(`- ${e.id} | ${e.name} | ${e.email} | ${e.departmentId}`);
+    const revs = await db.collection('performancereviews').find({}).toArray();
+    console.log('--- REVIEWS in Atlas ---', revs.length);
+    for (const r of revs) {
+        console.log(`${r.id} | empId: ${r.employeeId} | name: ${r.employeeName} | status: ${r.status}`);
     }
 
     process.exit(0);

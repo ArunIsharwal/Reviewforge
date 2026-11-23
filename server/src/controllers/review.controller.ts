@@ -89,9 +89,9 @@ export async function getReviews(req: Request, res: Response): Promise<void> {
     const queryFilter: any = { organizationId };
 
     if (user.role === 'employee' || user.role === 'peer_reviewer') {
-      // Critical security rule: employees can ONLY view reviews released to them
+      // Employees can view their own reviews once they are Approved or Released
       queryFilter.employeeId = user.employeeId || 'none';
-      queryFilter.status = 'Released';
+      queryFilter.status = { $in: ['Approved', 'Released'] };
     } else if (user.role === 'manager') {
       if (employeeId && typeof employeeId === 'string') {
         const isAuth = await isManagerAuthorizedForEmployee(user, employeeId, organizationId);
@@ -151,10 +151,10 @@ export async function getReviewById(req: Request, res: Response): Promise<void> 
 
     // Role-based scoping
     if (user.role === 'employee' || user.role === 'peer_reviewer') {
-      if (review.employeeId !== user.employeeId || review.status !== 'Released') {
+      if (review.employeeId !== user.employeeId || !['Approved', 'Released'].includes(review.status)) {
         res.status(403).json({
           success: false,
-          error: "Forbidden: You cannot access unreleased drafts or other employees' reviews",
+          error: "Forbidden: You cannot access unapproved drafts or other employees' reviews",
         });
         return;
       }
@@ -607,15 +607,6 @@ export async function publishReview(req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Strict Publishing Gate: HR Admin only
-    if (user.role !== 'hr_admin') {
-      res.status(403).json({
-        success: false,
-        error: 'Forbidden: Only HR Administrators have authority to publish reviews to the employee portal',
-      });
-      return;
-    }
-
     const organizationId = user.organizationId || 'org-reviewforge-default';
     const { id } = req.params;
 
@@ -623,6 +614,18 @@ export async function publishReview(req: Request, res: Response): Promise<void> 
     if (!review) {
       res.status(404).json({ success: false, error: `Performance review with ID "${id}" not found` });
       return;
+    }
+
+    // Publishing Gate: HR Admin or authorized Manager for that employee
+    if (user.role !== 'hr_admin') {
+      const isAuth = await isManagerAuthorizedForEmployee(user, review.employeeId, organizationId);
+      if (!isAuth) {
+        res.status(403).json({
+          success: false,
+          error: 'Forbidden: Only HR Administrators or authorized managers have authority to publish reviews to the employee portal',
+        });
+        return;
+      }
     }
 
     // Validation: Review must be in 'Approved' status

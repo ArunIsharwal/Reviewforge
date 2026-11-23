@@ -9,6 +9,7 @@
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
       "Courier New", monospace;
     --color-red-50: oklch(97.1% 0.013 17.38);
+    --color-red-100: oklch(93.6% 0.032 17.717);
     --color-red-200: oklch(88.5% 0.062 18.334);
     --color-red-500: oklch(63.7% 0.237 25.331);
     --color-red-600: oklch(57.7% 0.245 27.325);
@@ -275,6 +276,9 @@
   }
   .top-1\/4 {
     top: calc(1 / 4 * 100%);
+  }
+  .top-11 {
+    top: calc(var(--spacing) * 11);
   }
   .top-20 {
     top: calc(var(--spacing) * 20);
@@ -579,6 +583,9 @@
   .w-60 {
     width: calc(var(--spacing) * 60);
   }
+  .w-64 {
+    width: calc(var(--spacing) * 64);
+  }
   .w-72 {
     width: calc(var(--spacing) * 72);
   }
@@ -676,6 +683,9 @@
   }
   .animate-spin {
     animation: var(--animate-spin);
+  }
+  .cursor-default {
+    cursor: default;
   }
   .cursor-pointer {
     cursor: pointer;
@@ -1533,6 +1543,9 @@
   .opacity-75 {
     opacity: 75%;
   }
+  .opacity-90 {
+    opacity: 90%;
+  }
   .shadow-2xl {
     --tw-shadow: 0 25px 50px -12px var(--tw-shadow-color, rgb(0 0 0 / 0.25));
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
@@ -1727,6 +1740,12 @@
     .hover\:border-\[\#E6E8E1\]:hover {
       border-color: #E6E8E1;
     }
+    .hover\:border-red-100:hover {
+      border-color: var(--color-red-100);
+    }
+    .hover\:border-red-200:hover {
+      border-color: var(--color-red-200);
+    }
     .hover\:bg-\[\#831F20\]:hover {
       background-color: #831F20;
     }
@@ -1822,9 +1841,6 @@
     .hover\:text-red-500:hover {
       color: var(--color-red-500);
     }
-    .hover\:text-red-600:hover {
-      color: var(--color-red-600);
-    }
     .hover\:text-rose-700:hover {
       color: var(--color-rose-700);
     }
@@ -1833,9 +1849,6 @@
     }
     .hover\:underline:hover {
       text-decoration-line: underline;
-    }
-    .hover\:opacity-85:hover {
-      opacity: 85%;
     }
     .hover\:opacity-100:hover {
       opacity: 100%;
@@ -1847,6 +1860,13 @@
     .hover\:shadow-xl:hover {
       --tw-shadow: 0 20px 25px -5px var(--tw-shadow-color, rgb(0 0 0 / 0.1)), 0 8px 10px -6px var(--tw-shadow-color, rgb(0 0 0 / 0.1));
       box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    }
+    .hover\:ring-2:hover {
+      --tw-ring-shadow: var(--tw-ring-inset, ) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
+      box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    }
+    .hover\:ring-\[\#C8ED78\]:hover {
+      --tw-ring-color: #C8ED78;
     }
   }
   .focus\:border-\[\#17251F\]:focus {
@@ -1914,6 +1934,9 @@
     }
     .sm\:flex {
       display: flex;
+    }
+    .sm\:inline {
+      display: inline;
     }
     .sm\:inline-block {
       display: inline-block;
@@ -2041,6 +2064,9 @@
     }
     .md\:items-center {
       align-items: center;
+    }
+    .md\:justify-start {
+      justify-content: flex-start;
     }
     .md\:p-6 {
       padding: calc(var(--spacing) * 6);

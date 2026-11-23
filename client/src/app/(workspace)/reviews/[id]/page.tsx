@@ -40,6 +40,7 @@ export default function ReviewDetailPage() {
     showToast,
     activeRole,
     authUser,
+    employees,
   } = useStore();
 
   const review = performanceReviews.find(r => r.id === reviewId);
@@ -70,12 +71,21 @@ export default function ReviewDetailPage() {
     );
   }
 
-  const currentEmpId = authUser?.employeeId || 'emp-002';
+  const currentEmpId =
+    authUser?.employeeId ||
+    employees.find(e => e.email.toLowerCase() === authUser?.email?.toLowerCase())?.id ||
+    'emp-002';
   const isEmployee = activeRole === 'employee';
 
-  // Strict employee privacy check: only own released reviews can be inspected by employees
+  // Strict employee privacy check: only own Approved or Released reviews can be inspected by employees
   if (isEmployee) {
-    if (review.employeeId !== currentEmpId) {
+    const isOwnReview =
+      review.employeeId === currentEmpId ||
+      (authUser?.email &&
+        employees.find(e => e.id === review.employeeId)?.email?.toLowerCase() ===
+          authUser.email.toLowerCase());
+
+    if (!isOwnReview) {
       return (
         <div className="max-w-4xl mx-auto py-12">
           <EmptyState
@@ -89,13 +99,13 @@ export default function ReviewDetailPage() {
       );
     }
 
-    if (review.status !== 'Released') {
+    if (review.status !== 'Approved' && review.status !== 'Released') {
       return (
         <div className="max-w-4xl mx-auto py-12">
           <EmptyState
             icon={<AlertTriangle className="w-8 h-8 text-[#D97706]" />}
             title="Review Under Active Calibration"
-            description="Your performance review is currently undergoing manager drafting and executive approval. It will become visible here once formally released by leadership."
+            description="Your performance review is currently undergoing manager drafting and calibration. It will become visible here once formally approved by leadership."
             actionLabel="Back to Reviews"
             onAction={() => router.push('/reviews')}
           />
@@ -231,7 +241,7 @@ export default function ReviewDetailPage() {
             </Button>
           )}
 
-          {isHrAdmin && review.status === 'Approved' && (
+          {(isHrAdmin || isManagerOrAdmin) && review.status === 'Approved' && (
             <Button
               variant="primary"
               size="sm"
