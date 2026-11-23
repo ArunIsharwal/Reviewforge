@@ -127,7 +127,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setDepartments(DataRepository.getDepartments());
     setEmployees(DataRepository.getEmployees());
     setReviewCycles(DataRepository.getReviewCycles());
-    setOkrs(DataRepository.getOKRs());
+    if (role === 'employee') {
+      const empId = storedUser?.employeeId || 'emp-002';
+      setOkrs(DataRepository.getOKRsByEmployee(empId));
+    } else {
+      setOkrs(DataRepository.getOKRs());
+    }
     setFeedback(DataRepository.getFeedback());
     setSelfReflections(DataRepository.getSelfReflections());
     setManagerNotes(DataRepository.getManagerNotes(role));
@@ -256,17 +261,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         try {
           const okrsRes = await apiClient.getOKRs<OKR[]>();
           if (okrsRes.success && Array.isArray(okrsRes.data)) {
-            if (okrsRes.data.length > 0) {
-              setOkrs(okrsRes.data);
-              okrsRes.data.forEach(o => {
-                DataRepository.updateOKR(o.id, o) || DataRepository.addOKR(o);
-              });
-            } else {
-              const localOkrs = DataRepository.getOKRs();
-              if (localOkrs.length > 0) {
-                setOkrs(localOkrs);
-              }
-            }
+            setOkrs(okrsRes.data);
+            okrsRes.data.forEach(o => {
+              DataRepository.updateOKR(o.id, o) || DataRepository.addOKR(o);
+            });
           }
         } catch (e) {
           console.warn('Could not sync OKRs from server:', e);

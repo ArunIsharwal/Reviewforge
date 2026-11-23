@@ -114,34 +114,14 @@ export async function getOKRs(req: Request, res: Response): Promise<void> {
           { departmentId: managerDeptId },
         ];
       }
-    } else {
-      // Employee / Peer Reviewer
+    } else if (caller.role === 'employee') {
+      // Employee is strictly restricted to viewing ONLY their own personal OKRs
       const callerEmpId = caller.employeeId || 'emp-nonexistent';
-      let deptId = caller.departmentId;
-      if (!deptId && caller.employeeId) {
-        const empDoc = await Employee.findOne({ id: caller.employeeId, organizationId });
-        deptId = empDoc?.departmentId;
-      }
-
-      if (employeeId) {
-        if (employeeId === callerEmpId) {
-          filter.employeeId = callerEmpId;
-        } else {
-          // Only allow viewing peers in the same department
-          filter.employeeId = employeeId;
-          if (deptId) filter.departmentId = deptId;
-        }
-      } else {
-        // By default show own OKRs or department OKRs
-        if (deptId) {
-          filter.$or = [
-            { employeeId: callerEmpId },
-            { departmentId: deptId },
-          ];
-        } else {
-          filter.employeeId = callerEmpId;
-        }
-      }
+      filter.employeeId = callerEmpId;
+    } else {
+      // Peer Reviewer or external role: strictly own OKRs
+      const callerEmpId = caller.employeeId || 'emp-nonexistent';
+      filter.employeeId = callerEmpId;
     }
 
     const okrs = await OKR.find(filter).sort({ year: -1, quarter: -1, createdAt: -1 });
@@ -182,6 +162,13 @@ export async function getOKRById(req: Request, res: Response): Promise<void> {
 
     // Role check
     if (caller.role !== 'hr_admin' && okr.employeeId !== caller.employeeId) {
+      if (caller.role === 'employee') {
+        res.status(403).json({
+          success: false,
+          error: 'Access denied: Employees may only view their own OKRs',
+        });
+        return;
+      }
       const targetEmp = await Employee.findOne({ id: okr.employeeId, organizationId });
       let managerDeptId = caller.departmentId;
       if (!managerDeptId && caller.employeeId) {

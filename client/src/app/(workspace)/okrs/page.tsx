@@ -52,6 +52,13 @@ export default function OKRsPage() {
   const [deletingOkr, setDeletingOkr] = useState<OKR | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const isEmployee = activeRole === 'employee';
+  const currentEmpId =
+    authUser?.employeeId ||
+    employees.find((e) => e.email.toLowerCase() === authUser?.email?.toLowerCase())?.id ||
+    'emp-002';
+  const currentEmp = employees.find((e) => e.id === currentEmpId);
+
   // Form states
   const [formData, setFormData] = useState({
     employeeId: employees[1]?.id || 'emp-002',
@@ -72,47 +79,51 @@ export default function OKRsPage() {
     ],
   });
 
-  // Filtered OKRs
+  // Filtered OKRs - If employee role, strictly scoped to their own personal goals
   const filteredOkrs = okrs.filter((okr) => {
+    if (isEmployee) {
+      if (okr.employeeId !== currentEmpId) {
+        return false;
+      }
+    } else if (selectedEmp !== 'all' && okr.employeeId !== selectedEmp) {
+      return false;
+    }
     const matchesQ = selectedQuarter === 'all' || okr.quarter === selectedQuarter;
-    const matchesDept = selectedDept === 'all' || okr.departmentId === selectedDept;
-    const matchesEmp = selectedEmp === 'all' || okr.employeeId === selectedEmp;
-    return matchesQ && matchesDept && matchesEmp;
+    const matchesDept = isEmployee || selectedDept === 'all' || okr.departmentId === selectedDept;
+    return matchesQ && matchesDept;
   });
 
-  // Executive metrics calculations
-  const totalOkrs = okrs.length;
-  const completedOkrs = okrs.filter((o) => o.status === 'Completed').length;
+  // Executive metrics calculations based on accessible OKRs
+  const visibleOkrs = isEmployee ? okrs.filter((o) => o.employeeId === currentEmpId) : okrs;
+  const totalOkrs = visibleOkrs.length;
+  const completedOkrs = visibleOkrs.filter((o) => o.status === 'Completed').length;
   const averageProgress =
-    totalOkrs > 0 ? Math.round(okrs.reduce((sum, o) => sum + o.overallProgress, 0) / totalOkrs) : 0;
-  const totalKeyResults = okrs.reduce((sum, o) => sum + (o.keyResults?.length || 0), 0);
+    totalOkrs > 0 ? Math.round(visibleOkrs.reduce((sum, o) => sum + o.overallProgress, 0) / totalOkrs) : 0;
+  const totalKeyResults = visibleOkrs.reduce((sum, o) => sum + (o.keyResults?.length || 0), 0);
 
   const handleOpenAdd = () => {
-    const currentEmpId = authUser?.employeeId || 'emp-002';
-    const currentDeptId = employees.find(e => e.id === currentEmpId)?.departmentId || departments[0]?.id || 'dept-eng';
+    const targetEmpId = isEmployee
+      ? currentEmpId
+      : selectedEmp !== 'all'
+      ? selectedEmp
+      : employees[1]?.id || 'emp-002';
+    const emp = employees.find((e) => e.id === targetEmpId);
+    const targetDeptId = emp?.departmentId || departments[0]?.id || 'dept-eng';
+
     setFormData({
-      employeeId: activeRole === 'employee' ? currentEmpId : (employees[1]?.id || 'emp-002'),
+      employeeId: targetEmpId,
       quarter: 'Q4',
       year: 2026,
-      objective: 'Scale Review Generation Worker Throughput & Resilience',
-      departmentId: currentDeptId,
+      objective: '',
+      departmentId: targetDeptId,
       keyResults: [
         {
           id: `kr-${Date.now()}-1`,
-          title: 'Benchmark 50 concurrent review syntheses under 4 seconds',
-          targetValue: 50,
-          actualValue: 35,
-          unit: 'syntheses',
-          completionPercentage: 70,
-          status: 'On Track',
-        },
-        {
-          id: `kr-${Date.now()}-2`,
-          title: 'Establish zero-downtime deployment pipelines for workers',
+          title: '',
           targetValue: 100,
-          actualValue: 80,
-          unit: '% pipeline',
-          completionPercentage: 80,
+          actualValue: 0,
+          unit: '%',
+          completionPercentage: 0,
           status: 'On Track',
         },
       ],
@@ -154,14 +165,17 @@ export default function OKRsPage() {
     try {
       const totalPerc = formData.keyResults.reduce((acc, kr) => acc + kr.completionPercentage, 0);
       const overall = Math.round(totalPerc / Math.max(1, formData.keyResults.length));
+      const targetEmpId = isEmployee ? currentEmpId : formData.employeeId;
+      const emp = employees.find((e) => e.id === targetEmpId);
+      const targetDeptId = emp?.departmentId || formData.departmentId;
 
       await addOKR({
-        employeeId: formData.employeeId,
+        employeeId: targetEmpId,
         quarter: formData.quarter,
         year: formData.year,
-        objective: formData.objective,
-        departmentId: formData.departmentId,
-        keyResults: formData.keyResults,
+        objective: formData.objective.trim(),
+        departmentId: targetDeptId,
+        keyResults: formData.keyResults.filter((kr) => kr.title.trim().length > 0),
         overallProgress: overall,
         status: overall >= 90 ? 'Completed' : overall >= 60 ? 'On Track' : 'At Risk',
       });
@@ -283,33 +297,44 @@ export default function OKRsPage() {
             ))}
           </div>
 
-          {/* Department Filter */}
-          <select
-            value={selectedDept}
-            onChange={(e) => setSelectedDept(e.target.value)}
-            className="px-3 py-1.5 bg-[#FFFFFF] border border-[#E6E8E1] rounded-lg text-xs text-[#202820] focus:outline-none"
-          >
-            <option value="all">All Departments</option>
-            {departments.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
-          </select>
+          {!isEmployee && (
+            <>
+              {/* Department Filter */}
+              <select
+                value={selectedDept}
+                onChange={(e) => setSelectedDept(e.target.value)}
+                className="px-3 py-1.5 bg-[#FFFFFF] border border-[#E6E8E1] rounded-lg text-xs text-[#202820] focus:outline-none"
+              >
+                <option value="all">All Departments</option>
+                {departments.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
 
-          {/* Employee Filter */}
-          <select
-            value={selectedEmp}
-            onChange={(e) => setSelectedEmp(e.target.value)}
-            className="px-3 py-1.5 bg-[#FFFFFF] border border-[#E6E8E1] rounded-lg text-xs text-[#202820] focus:outline-none"
-          >
-            <option value="all">All Employees</option>
-            {employees.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.name} ({e.jobTitle})
-              </option>
-            ))}
-          </select>
+              {/* Employee Filter */}
+              <select
+                value={selectedEmp}
+                onChange={(e) => setSelectedEmp(e.target.value)}
+                className="px-3 py-1.5 bg-[#FFFFFF] border border-[#E6E8E1] rounded-lg text-xs text-[#202820] focus:outline-none"
+              >
+                <option value="all">All Employees</option>
+                {employees.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.name} ({e.jobTitle})
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+
+          {isEmployee && (
+            <div className="px-3 py-1.5 bg-[#FAFBF8] border border-[#E6E8E1] rounded-lg text-xs font-semibold text-[#17251F] flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#2C5E1A]" />
+              <span>Personal Objectives: {currentEmp?.name || authUser?.name || 'My OKRs'}</span>
+            </div>
+          )}
         </div>
 
         <span className="text-xs text-[#747D75] font-medium">
@@ -485,9 +510,9 @@ export default function OKRsPage() {
             </div>
             <div>
               <label className="block font-semibold text-[#17251F] mb-1">Assigned Employee</label>
-              {activeRole === 'employee' ? (
+              {isEmployee ? (
                 <div className="w-full px-3 py-2 bg-[#FAFBF8] border border-[#E6E8E1] rounded-lg text-xs font-semibold text-[#17251F]">
-                  {employees.find((e) => e.id === formData.employeeId)?.name || 'Rahul Deshmukh'}
+                  {currentEmp?.name || authUser?.name || 'Self'}
                 </div>
               ) : (
                 <select

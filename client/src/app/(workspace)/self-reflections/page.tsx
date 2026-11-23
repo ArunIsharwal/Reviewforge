@@ -21,7 +21,10 @@ export default function SelfReflectionsPage() {
   } = useStore();
 
   const activeCycle = reviewCycles.find(c => c.status === 'Active') || reviewCycles[0];
-  const currentEmpId = authUser?.employeeId || 'emp-002';
+  const currentEmpId =
+    authUser?.employeeId ||
+    employees.find((e) => e.email.toLowerCase() === authUser?.email?.toLowerCase())?.id ||
+    'emp-002';
   const isEmployee = activeRole === 'employee';
 
   // Current selected employee for reflection
